@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SpendSense</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+  <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/3.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div class="status-bar">10:30 AM</div>
+      <h1>SpendSense</h1>
+    </header>
+    <div id="content">
+<!-- tab 1: welcome -->
+  <section id="text_tab" class="tab active">
+    <h2 style="display:none">Welcome</h2>
+
+    <!-- Budget header card -->
+    <section class="card budget-card" style="max-width:600px;margin:12px auto 16px;">
+      <div class="month">October Budget</div>
+      <div class="subtle">Remaining</div>
+      <div class="amount-remaining" id="remainingAmount">$1,250.75</div>
+      <div class="row fineprint">
+        <span id="totalBudgetLabel">Total Budget: $2,500.00</span>
+        <span id="spentSoFarLabel">Spent So Far: $1,249.25</span>
+      </div>
+    </section>
+
+    <!-- Recent Activity -->
+    <section class="card" style="max-width:600px;margin:0 auto 80px;">
+      <div class="section-title">Recent Activity</div>
+      <br>
+      <ul id="transactionsList" class="activity-list"></ul>
+    </section>
+
+    <!-- Floating Action Button -->
+    <button id="fab" aria-label="Add transaction">+</button>
+
+    <!-- Quick-Add Modal -->
+    <div id="quickAddModal" class="modal" aria-hidden="true">
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="addTxTitle">
+        <h3 id="addTxTitle">Add Transaction</h3>
+
+        <div class="type-select" style="display:flex;gap:16px;justify-content:center">
+          <label><input type="radio" name="txType" value="expense" checked> Expense</label>
+          <label><input type="radio" name="txType" value="income"> Income</label>
+        </div>
+
+        <input type="number" id="amountInput" placeholder="Amount" min="0" step="0.01" />
+        <input type="text" id="noteInput" placeholder="Merchant / Note (optional)" />
+
+        <select id="categoryInput">
+          <option value="" disabled selected>Select category</option>
+          <option>Groceries</option>
+          <option>Rent</option>
+          <option>Utilities</option>
+          <option>Transportation</option>
+          <option>Dining</option>
+          <option>Entertainment</option>
+          <option>Miscellaneous</option>
+        </select>
+
+        <div class="modal-actions">
+          <button id="saveTransaction" class="btn btn-primary">Save</button>
+          <button id="closeModal" class="btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- toasts -->
+    <div id="txFeed" aria-live="polite"></div>
+  </section>
+
+
+      <!-- tab 2: lower right -->
+      <section id="lr_tab" class="tab">
+        <h2>LR</h2>
+        <div class="wrap">
+          <div class="lower-right">Down Here</div>
+        </div>
+      </section>
+
+      <!-- tab 3: color -->
+      <section id="colors_tab" class="tab">
+        <h2>Colors</h2>
+        <p id="yellow_black_text">yellow text with black background</p>
+        <p id="purple_yellow_text">purple text with yellow background</p>
+      </section>
+
+      <!-- tab 4: profile -->
+      <section id="profile_tab" class="tab">
+        <h2>Profile</h2>
+        <div class="center">
+          <img id="avatar" src="images/testy.png" alt="Profile" />
+          <div class="name">Testudo</div>
+        </div>
+      <div id="profile_notification" class="notification_overlay">
+        <div class="notification_box">
+          <div class="notification_title">Hello!</div>
+          <div class="notification_text">You tapped the profile image.</div>
+          <button id="close_notification">Close</button>
+        </div>
+      </div>
+      <div class="budget-card">
+        <h2 class="budget-title">October Budget</h2>
+        <p class="budget-label">Remaining</p>
+        <div class="budget-amount">$1,250.75</div>
+        <div class="budget-details">
+          <div class="budget-item">
+            <div class="budget-item-label">Total Budget</div>
+            <div class="budget-item-value">$2,500.00</div>
+          </div>
+          <div class="budget-item">
+            <div class="budget-item-label">Spent So Far</div>
+            <div class="budget-item-value">$1,249.25</div>
+          </div>
+        </div>
+        <div class="income-line">
+          <span class="income-label">Monthly Income: $3,000.00</span>
+        </div>
+      </div>
+      <div class="goals-box">
+        <h3 class="goals-title">Goals</h3>
+        <div class="goal-item">
+          <div class="goal-header">
+            <span class="goal-label">Short Term Goal</span>
+          </div>
+          <div class="goal-name">New Laptop: $700 / $1,50</div>
+        </div>
+        
+        <div class="goal-item">
+          <div class="goal-header">
+            <span class="goal-label">Long Term Goal</span>
+          </div>
+          <div class="goal-name">New Car: $5,000 / $20,000</div>
+        </div>
+      </div>
+      </section>
+
+      <!-- tab 5: choices -->
+      <section id="choices_tab" class="tab">
+        <h2>Choices</h2>
+        <div class="card">
+          <div class="row">
+            <label><input type="radio" name="termLength" value="Monthly" checked /> Monthly</label>
+            <label><input type="radio" name="termLength" value="Anually" /> Anually</label>
+          </div>
+          <div class="row">
+            <!--<label for="flavor">Flavor</label>
+            <select id="flavor">
+              <option value="Vanilla">Vanilla</option>
+              <option value="Chocolate">Chocolate</option>
+              <option value="Matcha">Matcha</option>
+              <option value="Strawberry">Strawberry</option>
+            </select>-->
+            <label for="expense">Expense</label>
+            <select id="expense">
+              <option value="Car">Car</option>
+              <option value="House">House</option>
+              <option value="Vacation">Vacation</option>
+              <option value="Loans">Loans</option>
+              <option value="Groceries">Groceries</option>
+              <option value="Miscellaneous">Miscellaneous</option>
+
+            </select>
+
+          </div>
+          <div class="row">
+            <button class="go" id="show_choice">Show Selection</button>
+          </div>
+          <div class="out" id="choice_output"></div>
+        </div>
+      </section>
+
+      <!-- tab 6: todo -->
+      <section id="todo_tab" class="tab">
+        <h2>ToDo</h2>
+        <div class="todo">
+          <div class="row">
+            <input id="todo_input" type="text" placeholder="New item" />
+            <button class="add" id="todo_add">Add</button>
+          </div>
+          <ul id="todo_list"></ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- navigation  bar -->
+    <nav id="navigationBar">
+      <button id="tab-text" class="active" data-target="#text_tab">
+        <i class="fi fi-rr-document"></i>
+        <span>Home</span>
+      </button>
+      <button id="tab-lr" data-target="#lr_tab">
+        <i class="fi fi-rr-arrow-trend-down"></i>
+        <span>LR</span>
+      </button>
+      <button id="tab-colors" data-target="#colors_tab">
+        <i class="fi fi-rr-palette"></i>
+        <span>Colors</span>
+      </button>
+      <button id="tab-profile" data-target="#profile_tab">
+        <i class="fi fi-rr-user"></i>
+        <span>Profile</span>
+      </button>
+      <button id="tab-choices" data-target="#choices_tab">
+        <i class="fi fi-rr-choose"></i>
+        <span>Choices</span>
+      </button>
+      <button id="tab-todo" data-target="#todo_tab">
+        <i class="fi fi-rr-task-checklist"></i>
+        <span>ToDo</span>
+      </button>
+    </nav>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
