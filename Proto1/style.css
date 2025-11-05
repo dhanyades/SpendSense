@@ -1,0 +1,488 @@
+/* color pallet */
+:root {
+  --bg: #01200F;
+  --panel: #104F55;
+  --accent: #32746D;
+  --text: #9EC5AB;
+  --muted: #9EC5AB;
+  --mint: #9EC5AB;
+  --border: #011502;
+  --panel-2: #0B3A3F;  
+  --good: #36c787;   
+  --bad: #ff5a5a;    
+ 
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  color: var(--text);
+}
+
+#app {
+  width: 640px;
+  height: 960px; 
+  margin: 20px auto;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+
+}
+
+/* tabs */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+
+}
+
+.tab {
+  display: none;
+  padding: 16px;
+}
+
+.tab.active {
+  display: block;
+}
+
+h2 {
+  margin-bottom: 10px;
+  color: var(--mint);
+  font-size: 22px;
+}
+
+/* header*/
+.app-header{
+  padding:10px 16px 6px;
+}
+.status-bar{
+  opacity:.7;
+  font-size:.85rem;
+}
+.app-header h1{
+  margin:6px 0 0;
+  font-weight:600;
+  text-align:center;
+}
+
+/*HOME SCREEN*/
+#fab{
+  position: fixed;
+  bottom: 67px;     
+  left: 47%;
+  transform: translateX(280px); 
+  width: 56px; height: 56px;
+  border: 0; border-radius: 50%;
+  background: var(--accent); color: #fff; font-size: 36px;
+  display: grid; place-items: center; cursor: pointer;
+  box-shadow: 0 12px 24px rgba(0,0,0,.35);
+  z-index: 999;
+}
+
+/* modal */
+.modal { 
+  display: none; 
+  position: fixed; 
+  inset: 0; 
+  background: rgba(0,0,0,.55);
+  justify-content: center; 
+  align-items: center; 
+  padding: 16px; 
+  z-index: 1000; 
+}
+.modal.show { display: flex; }
+.modal-content {
+  background: var(--panel);
+  color: var(--text);
+  width: 320px;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+.modal-content h3 { 
+  margin: 0 0 4px; 
+  text-align: center; 
+  color: var(--mint); 
+}
+.modal-content input,
+.modal-content select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(0,0,0,.15);
+  color: var(--text);
+}
+.modal-actions { 
+  display: flex; 
+  gap: 8px; 
+  justify-content: flex-end; 
+}
+.btn { 
+  padding: 8px 12px; 
+  border-radius: 8px; 
+  border: 1px solid rgba(255,255,255,.2); 
+  background: rgba(255,255,255,.08); 
+  color: var(--text); 
+  cursor: pointer; 
+}
+.btn-primary { background: var(--accent); border-color: transparent; color: #fff; }
+
+/* activity list */
+.activity-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.activity-item { background: var(--panel-2); border-radius: 10px; padding: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.activity-left { display: flex; gap: 10px; align-items: center; }
+.activity-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: rgba(255,255,255,.08); }
+.activity-title { font-weight: 600; }
+.activity-note { opacity: .8; font-size: .9rem; }
+.amount { font-weight: 700; }
+.amount.expense { color: var(--bad); }
+.amount.income  { color: var(--good); }
+/* top box for budget */
+.budget-card {
+  background: var(--panel);
+  color: var(--text);
+  text-align: center;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 600px;
+  margin: 20px auto;
+}
+
+.budget-card .month {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.budget-card .subtle {
+  opacity: 0.85;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.budget-card .amount-remaining {
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.budget-card .row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* lowerright tab */
+#lr_tab { 
+  padding: 0;                
+}
+
+#lr_tab .wrap {
+  position: absolute;        
+  inset: 0;                  
+  background: var(--card);   
+}
+
+#lr_tab .lower-right{
+  position: absolute;
+  right: 16px;
+  bottom: 16px;              
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--mint-400);
+}
+
+/* color tab */
+#yellow_black_text {
+  color: yellow;
+  background: black;
+  padding: 5px;
+}
+
+#purple_yellow_text {
+  color: purple;
+  background: yellow;
+  padding: 5px;
+}
+
+/* profile screen */
+#profile_tab .center {
+  text-align: center;
+  margin-top: 40px;
+}
+
+#profile_tab img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  cursor: pointer;
+}
+
+#profile_tab .name {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.notification_overlay {
+  display: none;               
+  position: absolute;           
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6); 
+  justify-content: center;
+  align-items: center;
+}
+
+/*notif */
+.notification_box {
+  background: var(--panel);
+  padding: 20px;
+  border-radius: 6px;
+  text-align: center;
+  width: 80%;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.notification_title {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--mint-400);
+  margin-bottom: 10px;
+}
+
+.notification_text {
+  margin-bottom: 15px;
+  color: var(--text-strong);
+}
+
+/*profile info*/
+.budget-card {
+  background: var(--accent);
+  border-radius: 12px;
+  padding: 24px;
+  color: var(--text);
+  text-align: center;
+  margin: 20px auto;
+  max-width: 350px;
+}
+
+.budget-title {
+  font-size: 20px;
+  margin: 0 0 8px 0;
+}
+
+.budget-label {
+  font-size: 14px;
+  color: var(--text);
+  margin: 0 0 12px 0;
+}
+
+.budget-amount {
+  font-size: 48px;
+  font-weight: bold;
+  color: var(--text);
+  margin: 0 0 20px 0;
+}
+
+.budget-details {
+  display: flex;
+  justify-content: space-around;
+}
+
+.budget-item-label {
+  color: var(--text);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.budget-item-value {
+  font-weight: bold;
+}
+
+.income-line {
+  padding: 10px;
+  border-radius: 8px;
+  margin: 10px auto;
+  max-width: 350px;
+  display: flex;
+  justify-content:center;
+  align-items: center;
+  color: var(--text);
+}
+
+.goals-box {
+  background: var(--accent);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px auto;
+  max-width: 350px;
+}
+
+.goals-title {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  color: var(--text);
+  text-align: center;
+}
+
+.goal-label {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.goal-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+
+.goal-amount {
+  font-size: 14px;
+  color: var(--text);
+  text-align: right;
+}
+
+
+/*close*/
+.notification_box button {
+  padding: 8px 14px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.notification_box button:hover {
+  background: var(--teal-600);
+}
+
+/* choices */
+#choices_tab .row {
+  margin: 10px 0;
+}
+
+#choices_tab select,
+#choices_tab input[type="radio"] {
+  margin-right: 8px;
+}
+
+#choices_tab .go {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+#choices_tab .out {
+  margin-top: 10px;
+  color: var(--mint);
+}
+
+/* to do */
+#todo_tab input {
+  width: 70%;
+  padding: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+}
+
+#todo_tab .add {
+  padding: 8px 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+#todo_tab ul {
+  list-style: none;
+  margin-top: 10px;
+}
+
+#todo_tab li {
+  background: var(--panel);
+  margin-bottom: 8px;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#todo_tab li.done .txt {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+#todo_tab .actions button {
+  background: #204c38;
+  color: #fff;
+  border: none;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+/* nav bar */
+#navigationBar{
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 640px;
+  background: #04140d;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+  z-index: 1000;
+}
+
+/* give content room so nav doesn't cover it */
+#content{ padding-bottom: 90px; }
+
+#navigationBar button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 24px;
+  display: flex;
+  flex-direction: column; 
+  align-items: center;
+}
+
+#navigationBar i {
+  font-size: 24px;
+}
+
+#navigationBar span {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+#navigationBar button.active {
+  color: var(--mint);
+}
