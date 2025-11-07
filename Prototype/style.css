@@ -82,7 +82,8 @@ h2 {
 
 /*HOME SCREEN*/
 #fab {
-  position: absolute;           
+  position: absolute; 
+  bottom: calc(var(--nav-height) + 20px);
   width: 50px;
   margin-left: 17px;
   height: 50px;
