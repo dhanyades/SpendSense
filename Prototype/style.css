@@ -85,11 +85,11 @@ h2 {
 /*HOME SCREEN*/
 #fab{
   position: absolute; /* positioned inside #app */
-  bottom: calc(var(--nav-height) - 32px);
-  left: 50%;
+  bottom: 96px;
+  left: 94%;
   transform: translate(-50%, 0) scale(1);
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   border: 0;
   border-radius: 50%;
   background: var(--accent);
