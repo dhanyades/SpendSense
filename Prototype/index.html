@@ -90,7 +90,6 @@
               <label for="goalAllocationInput">Allocate to Goal</label>
               <select id="goalAllocationInput">
                 <option value="">None</option>
-                <!-- Goals will be populated dynamically -->
               </select>
             </div>
 
@@ -156,7 +155,6 @@
     </div>
         <!-- Floating Action Button -->
     <button id="fab" aria-label="Add transaction">+</button>
-    <!-- toasts -->
     <div id="txFeed" aria-live="polite"></div>
   </section>
 
@@ -254,7 +252,6 @@
           </div>
         </div>
 
-        <!-- Inline LR add form (survey style) -->
         <div id="lr_add_form" class="lr-add-form" style="display:none; margin-top:16px;">
           <div class="form-grid">
             <div class="form-section">
@@ -325,10 +322,8 @@
 
         <div class="transactions-container">
           <div class="transactions-by-category">
-            <!-- Categories will be dynamically inserted here -->
           </div>
           <div id="categoryTotals" class="category-totals">
-            <!-- Category totals will be displayed here -->
           </div>
         </div>
       </section>
@@ -377,7 +372,7 @@
         <ul id="customCategoriesList" class="custom-category-list" aria-live="polite"></ul>
       </div>
 
-      <!-- Create Category Modal (scoped to Profile) -->
+      <!-- Create Category Modal  -->
       <div id="createCategoryModal" class="modal" aria-hidden="true">
         <div class="modal-content create-category-modal" role="dialog" aria-modal="true" aria-labelledby="createCategoryTitle">
           <button class="modal-close" id="closeCategoryModal" aria-label="Close category modal">&times;</button>
@@ -475,7 +470,7 @@
         </div>
       </section>
 
-      <!-- Reminders Tab (Minimal) -->
+      <!-- Reminders Tab -->
       <section id="reminders_tab" class="tab" style="font-family:Arial, sans-serif; padding:16px;">
         <h2>Reminders</h2>
         <p>Track bills and payments.</p>

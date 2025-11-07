@@ -26,10 +26,8 @@ try {
   tx = [];
   localStorage.setItem('transactions', '[]');
 }
-// Initialize budget from localStorage or prompt user for initial budget
 let budget = JSON.parse(localStorage.getItem('budget')) || null;
 
-// If no budget is set, prompt user for initial budget
 if (!budget) {
   const initialBudget = prompt('Welcome to SpendSense! Please enter your monthly budget:', '2500');
   budget = {
@@ -39,13 +37,10 @@ if (!budget) {
   localStorage.setItem('budget', JSON.stringify(budget));
 }
 
-// Update budget displays
 function updateBudgetDisplays() {
-  // Update home page budget
   document.querySelector('.amount-remaining').textContent = `$${budget.remaining.toFixed(2)}`
   document.querySelector('#totalBudgetLabel').textContent = `Total Budget: $${budget.total.toFixed(2)}`
 
-  // Use computed totals so 'Spent So Far' excludes allocations and we show allocated separately
   const computed = computeBudgetTotals();
   const allocated = computed.allocatedToGoals || 0;
   const spentExcluding = computed.spentExcludingAllocations || 0;
@@ -56,7 +51,6 @@ function updateBudgetDisplays() {
   const spentLabel = document.getElementById('spentSoFarLabel');
   if (spentLabel) spentLabel.textContent = `Spent So Far: $${spentExcluding.toFixed(2)}`;
 
-  // Update profile page budget if it exists
   const profileBudget = document.querySelector('#profile_tab .budget-amount')
   if (profileBudget) {
     profileBudget.textContent = `$${budget.remaining.toFixed(2)}`
@@ -71,23 +65,20 @@ function updateBudgetDisplays() {
   updateBudgetBreakdownDetails();
 }
 
-// Compute totals, allocated amount and spent excluding allocations
 function computeBudgetTotals() {
   const totals = (Array.isArray(tx) ? tx : []).reduce((acc, t) => {
     if (!t || typeof t !== 'object') return acc;
     if (t.type === 'expense') {
       acc.totalExpenses += Number(t.amt) || 0;
-      // Only count allocations for expense transactions to avoid double-counting incomes
+
       if (t.goalAllocation) acc.allocatedToGoals += Number(t.amt) || 0;
     }
     if (t.type === 'income') {
       acc.totalIncome += Number(t.amt) || 0;
-      // do not add income allocations to allocatedToGoals here
     }
     return acc;
   }, { totalExpenses: 0, totalIncome: 0, allocatedToGoals: 0 });
 
-  // Spent so far should exclude amounts allocated to goals
   const spentExcludingAllocations = Math.max(0, totals.totalExpenses - totals.allocatedToGoals);
 
   return {
@@ -314,10 +305,8 @@ saveCategoryBtn?.addEventListener('click', () => {
   closeCreateCategoryModal();
 });
 
-// Recalculate budget.remaining using totals and persist
 function recalcAndSaveBudget() {
   const { totalExpenses, totalIncome, allocatedToGoals } = computeBudgetTotals();
-  // Treat allocated to goals separately — do not count them as spent for remaining calculation
   budget.remaining = Number((budget.total - totalExpenses + totalIncome + allocatedToGoals).toFixed(2));
   try { localStorage.setItem('budget', JSON.stringify(budget)); } catch (e) { console.error('Failed to save budget:', e); }
   return computeBudgetTotals();
@@ -457,12 +446,11 @@ saveTransaction.onclick = () => {
     goalAllocation: document.getElementById('goalAllocationInput')?.value || '',
   };
 
-  // Initialize tx array if it's not already an array
   if (!Array.isArray(tx)) {
     tx = [];
   }
 
-  transaction.id = Date.now(); // Add unique ID to transaction
+  transaction.id = Date.now(); 
   tx.push(transaction);
   
   try {
@@ -473,24 +461,20 @@ saveTransaction.onclick = () => {
     return;
   }
 
-  // If allocated to a goal, update that goal's progress
   if (transaction.goalAllocation) {
     try {
-      // goalAllocation is stored as goal id string - convert
       updateGoalProgress(transaction);
     } catch (e) {
       console.error('Failed to update goal progress:', e);
     }
   }
 
-  // Recalculate budget from all transactions to keep in sync (excludes allocations from spent)
   try {
     recalcAndSaveBudget();
   } catch (e) {
     console.error('Failed to recalculate budget:', e);
   }
 
-  // Clear form
   amountInput.value = '';
   if (noteInput) noteInput.value = '';
   if (categoryInput.options.length) {
@@ -502,7 +486,6 @@ saveTransaction.onclick = () => {
   document.getElementById('recurringInput').value = 'no';
   document.getElementById('goalAllocationInput').value = '';
 
-  // Close modal, refresh UI
   document.getElementById('quickAddModal')?.classList.remove('show');
   updateBudgetDisplays();
   updateGoalDisplays();
@@ -510,11 +493,10 @@ saveTransaction.onclick = () => {
 }
 
 function render(){
-  // Recalculate budget first (using centralized logic that excludes goal allocations from 'spent')
   recalcAndSaveBudget();
   updateBudgetDisplays();
 
-  // Render recent transactions on home page
+
   const transactionsList = document.getElementById('transactionsList');
   if (transactionsList) {
     transactionsList.innerHTML = '';
@@ -533,7 +515,6 @@ function render(){
       let li = document.createElement('li');
       li.className = 'activity-item';
 
-      // Safely format the date
       let dateStr;
       try {
         dateStr = t.date ? new Date(t.date).toLocaleDateString() : 'No date';
@@ -541,7 +522,6 @@ function render(){
         dateStr = 'Invalid date';
       }
 
-      // Safely format the amount
       let amountStr;
       try {
         amountStr = typeof t.amt === 'number' ? t.amt.toFixed(2) : '0.00';
@@ -559,12 +539,10 @@ function render(){
     });
   }
 
-  // Render detailed transactions view
   const currentFilter = document.getElementById('categoryFilter')?.value || 'all';
   renderDetailedTransactions(currentFilter);
 }
 
-// Goal Management
 let goals = [];
 try {
   const storedGoals = localStorage.getItem('goals');
@@ -574,7 +552,6 @@ try {
   goals = [];
 }
 
-// Goal Modal Elements
 const goalModal = document.getElementById('goalModal');
 const closeGoalModal = document.getElementById('closeGoalModal');
 const addGoalBtn = document.getElementById('addGoalBtn');
@@ -631,7 +608,6 @@ function addGoal(goalData) {
   return goal;
 }
 
-// Save goal handler
 if (saveGoalBtn) {
   saveGoalBtn.onclick = () => {
     const nameInput = document.getElementById('goalName');
@@ -655,7 +631,6 @@ if (saveGoalBtn) {
     };
 
     if (goalIdInput.value) {
-      // Edit existing goal
       const goalIndex = goals.findIndex(g => g.id === parseInt(goalIdInput.value));
       if (goalIndex !== -1) {
         goals[goalIndex] = {
@@ -668,7 +643,6 @@ if (saveGoalBtn) {
         };
       }
     } else {
-      // Add new goal
       addGoal(goalData);
     }
 
@@ -691,7 +665,6 @@ function updateGoalProgress(transaction) {
   const goal = goals.find(g => g.id === parseInt(transaction.goalAllocation));
   if (!goal) return;
 
-  // Remove transaction from all goals first (in case it was previously allocated to a different goal)
   goals.forEach(g => {
     g.transactions = g.transactions.filter(t => t.id !== transaction.id);
     g.currentAmount = g.transactions.reduce((sum, t) => {
@@ -699,7 +672,6 @@ function updateGoalProgress(transaction) {
     }, 0);
   });
 
-  // Add transaction to new goal
   goal.transactions.push(transaction);
   goal.currentAmount = goal.transactions.reduce((sum, t) => {
     return sum + (t.type === 'expense' ? -t.amt : t.amt);
@@ -724,13 +696,10 @@ function updateGoalOptions(selectElement = null) {
   selects.forEach(select => {
     if (!select) return;
 
-    // Store current value
     const currentValue = select.value;
     
-    // Clear existing options (except the "None" option)
     select.innerHTML = '<option value="">None</option>';
     
-    // Add goal options
     goals.forEach(goal => {
       const option = document.createElement('option');
       option.value = goal.id;
@@ -738,7 +707,6 @@ function updateGoalOptions(selectElement = null) {
       select.appendChild(option);
     });
     
-    // Restore selected value if it still exists
     if (currentValue && [...select.options].some(opt => opt.value === currentValue)) {
       select.value = currentValue;
     }
@@ -847,7 +815,6 @@ function renderProfileGoalsMirror(stats) {
   `;
 }
 
-// Initial render and budget update
 render();
 updateBudgetDisplays();
 updateGoalDisplays();
@@ -869,7 +836,6 @@ closeNotification.addEventListener("click", () => {
   notification.style.display = "none";
 });
 
-// Function to render transactions grouped by category
 function renderDetailedTransactions(filterCategory = 'all') {
   const container = document.querySelector('.transactions-by-category');
   if (!container) return;
@@ -880,7 +846,6 @@ function renderDetailedTransactions(filterCategory = 'all') {
   const activeFilter = filterCategory || 'all';
   updateCategoryFilterOptions(activeFilter);
   
-  // Group transactions by category
   const groupedTransactions = {};
   const categoryTotals = {};
   
@@ -902,10 +867,8 @@ function renderDetailedTransactions(filterCategory = 'all') {
     }
   });
 
-  // Sort categories alphabetically
   const sortedCategories = Object.keys(groupedTransactions).sort();
 
-  // Render each category group
   sortedCategories.forEach(category => {
     const categoryGroup = document.createElement('div');
     categoryGroup.className = 'category-group';
@@ -960,7 +923,6 @@ function renderDetailedTransactions(filterCategory = 'all') {
     container.appendChild(categoryGroup);
   });
 
-  // Update category totals
   updateCategoryTotals(categoryTotals);
 }
 
@@ -995,7 +957,6 @@ function updateCategoryTotals(categoryTotals) {
   `;
 }
 
-// Edit transaction functionality
 const editTransactionModal = document.getElementById('editTransactionModal');
 const closeEditModal = document.getElementById('closeEditModal');
 const updateTransaction = document.getElementById('updateTransaction');
@@ -1010,25 +971,21 @@ function openEditModal(transaction) {
   const editTransactionId = document.getElementById('editTransactionId');
   const editTypeInputs = document.getElementsByName('editTxType');
 
-  // Set basic fields
   editAmountInput.value = transaction.amt;
   editMerchantInput.value = transaction.merchant || '';
   editNoteInput.value = transaction.note || '';
   editCategoryInput.value = transaction.cat;
   editTransactionId.value = transaction.id;
   
-  // Set advanced fields
   editRecurringInput.value = transaction.recurring || 'no';
   editGoalAllocationInput.value = transaction.goalAllocation || '';
   
-  // Set transaction type radio button
   editTypeInputs.forEach(input => {
     if (input.value === transaction.type) {
       input.checked = true;
     }
   });
 
-  // Update goal allocation options
   updateGoalOptions(editGoalAllocationInput);
 
   editTransactionModal.classList.add('show');
@@ -1056,7 +1013,6 @@ updateTransaction.onclick = () => {
     return;
   }
 
-  // Find and update the transaction
   const transactionIndex = tx.findIndex(t => t.id === parseInt(editTransactionId.value));
   if (transactionIndex === -1) {
     alert('Transaction not found');
@@ -1072,7 +1028,6 @@ updateTransaction.onclick = () => {
     note: editNoteInput.value
   };
 
-  // Update budget
   if (oldTransaction.type === 'expense') {
     budget.remaining += oldTransaction.amt;
   } else {
@@ -1085,18 +1040,14 @@ updateTransaction.onclick = () => {
     budget.remaining += amount;
   }
 
-  // Update transaction and save
   tx[transactionIndex] = newTransaction;
   
-  // Update goal progress if transaction is allocated to a goal
   if (newTransaction.goalAllocation) {
     updateGoalProgress(newTransaction);
   }
   
-  // Recalculate total budget numbers (exclude allocations from 'spent')
   recalcAndSaveBudget();
   
-  // Save all changes
   localStorage.setItem('transactions', JSON.stringify(tx));
   localStorage.setItem('budget', JSON.stringify(budget));
 
@@ -1105,7 +1056,6 @@ updateTransaction.onclick = () => {
   render();
 };
 
-// Set up event listeners for LR tab
 document.addEventListener('DOMContentLoaded', () => {
   const categoryFilter = document.getElementById('categoryFilter');
   if (categoryFilter) {
@@ -1115,12 +1065,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// LR inline form handlers
 const lrSaveBtn = document.getElementById('lr_saveTransaction');
 const lrCancelBtn = document.getElementById('lr_cancel');
 if (lrSaveBtn) {
   lrSaveBtn.addEventListener('click', () => {
-    // Build transaction from LR form
     const amount = parseFloat(document.getElementById('lr_amountInput')?.value || 0);
     const category = document.getElementById('lr_categoryInput')?.value;
     const merchant = document.getElementById('lr_merchantInput')?.value || '';
@@ -1151,20 +1099,16 @@ if (lrSaveBtn) {
       goalAllocation,
     };
 
-    // Push and save
     if (!Array.isArray(tx)) tx = [];
     tx.push(transaction);
     try { localStorage.setItem('transactions', JSON.stringify(tx)); } catch (e) { console.error(e); }
 
-    // Update goal if allocated
     if (transaction.goalAllocation) updateGoalProgress(transaction);
 
-    // Recalc budget
     try {
       recalcAndSaveBudget();
     } catch (e) { console.error(e); }
 
-    // Close and refresh
     const lrCategorySelect = document.getElementById('lr_categoryInput');
     if (lrCategorySelect && lrCategorySelect.options.length) {
       lrCategorySelect.selectedIndex = 0;
