@@ -12,43 +12,21 @@ tabs.forEach(b => b.addEventListener('click', () => {
 
 
 //welcome page
-let tx;
-try {
-  const storedTx = localStorage.getItem('transactions');
-  tx = storedTx ? JSON.parse(storedTx) : [];
-  if (!Array.isArray(tx)) {
-    console.error('Stored transactions is not an array, resetting...');
-    tx = [];
-    localStorage.setItem('transactions', '[]');
-  }
-} catch (e) {
-  console.error('Error loading transactions:', e);
-  tx = [];
-  localStorage.setItem('transactions', '[]');
-}
-// Initialize budget from localStorage or prompt user for initial budget
-let budget = JSON.parse(localStorage.getItem('budget')) || null;
-
-// If no budget is set, prompt user for initial budget
-if (!budget) {
-  const initialBudget = prompt('Welcome to SpendSense! Please enter your monthly budget:', '2500');
-  budget = {
-    total: parseFloat(initialBudget) || 2500,
-    remaining: parseFloat(initialBudget) || 2500
-  };
-  localStorage.setItem('budget', JSON.stringify(budget));
-}
+let tx = [];
+const budget = { total: 0, remaining: 0 };
 
 // Update budget displays
 function updateBudgetDisplays() {
-  // Update home page budget
-  document.querySelector('.amount-remaining').textContent = `$${budget.remaining.toFixed(2)}`
-  document.querySelector('#totalBudgetLabel').textContent = `Total Budget: $${budget.total.toFixed(2)}`
+  const totals = computeBudgetTotals();
+
+  const remainingEl = document.querySelector('.amount-remaining');
+  if (remainingEl) remainingEl.textContent = `$${budget.remaining.toFixed(2)}`;
+  const totalLabel = document.getElementById('totalBudgetLabel');
+  if (totalLabel) totalLabel.textContent = `Total Budget: $${budget.total.toFixed(2)}`;
 
   // Use computed totals so 'Spent So Far' excludes allocations and we show allocated separately
-  const computed = computeBudgetTotals();
-  const allocated = computed.allocatedToGoals || 0;
-  const spentExcluding = computed.spentExcludingAllocations || 0;
+  const allocated = totals.allocatedToGoals || 0;
+  const spentExcluding = totals.spentExcludingAllocations || 0;
 
   const allocatedLabel = document.getElementById('allocatedToGoalsLabel');
   if (allocatedLabel) allocatedLabel.textContent = `Allocated to Goals: $${allocated.toFixed(2)}`;
@@ -108,38 +86,11 @@ const defaultCategories = [
   'Miscellaneous'
 ];
 
-let categories;
-try {
-  const storedCategories = JSON.parse(localStorage.getItem('categories'));
-  categories = Array.isArray(storedCategories) && storedCategories.length ? storedCategories : [...defaultCategories];
-} catch (e) {
-  console.error('Failed to load categories from storage, using defaults.', e);
-  categories = [...defaultCategories];
-}
-
+let categories = [...defaultCategories];
 let categoryMetadata = {};
-try {
-  const storedMetadata = JSON.parse(localStorage.getItem('categoryMetadata'));
-  categoryMetadata = storedMetadata && typeof storedMetadata === 'object' ? storedMetadata : {};
-} catch (error) {
-  categoryMetadata = {};
-}
 
-function saveCategories() {
-  try {
-    localStorage.setItem('categories', JSON.stringify(categories));
-  } catch (error) {
-    console.error('Unable to save categories:', error);
-  }
-}
-
-function saveCategoryMetadata() {
-  try {
-    localStorage.setItem('categoryMetadata', JSON.stringify(categoryMetadata));
-  } catch (error) {
-    console.error('Unable to save category metadata:', error);
-  }
-}
+function saveCategories() {}
+function saveCategoryMetadata() {}
 
 function normalizeCategoryName(name) {
   if (!name) return '';
@@ -316,11 +267,10 @@ saveCategoryBtn?.addEventListener('click', () => {
 
 // Recalculate budget.remaining using totals and persist
 function recalcAndSaveBudget() {
-  const { totalExpenses, totalIncome, allocatedToGoals } = computeBudgetTotals();
-  // Treat allocated to goals separately — do not count them as spent for remaining calculation
-  budget.remaining = Number((budget.total - totalExpenses + totalIncome + allocatedToGoals).toFixed(2));
-  try { localStorage.setItem('budget', JSON.stringify(budget)); } catch (e) { console.error('Failed to save budget:', e); }
-  return computeBudgetTotals();
+  const totals = computeBudgetTotals();
+  budget.total = totals.totalIncome;
+  budget.remaining = Math.max(0, totals.totalIncome - totals.totalExpenses);
+  return totals;
 }
 
 const budgetBreakdownModal = document.getElementById('budgetBreakdownModal');
@@ -336,62 +286,46 @@ function formatCurrency(value = 0) {
 function updateBudgetBreakdownDetails() {
   if (!budgetBreakdownModal) return;
 
-  const { totalExpenses, totalIncome, allocatedToGoals, spentExcludingAllocations } = computeBudgetTotals();
-  const remaining = budget?.remaining || 0;
+  const totals = computeBudgetTotals();
+  const remaining = budget.remaining;
 
-  const mapping = [
-    ['breakdownTotalBudget', budget?.total || 0],
-    ['breakdownRemaining', remaining],
-    ['breakdownSpent', spentExcludingAllocations],
-    ['breakdownAllocated', allocatedToGoals],
-    ['breakdownIncome', totalIncome],
-    ['breakdownNet', totalIncome - totalExpenses]
-  ];
+  const totalEl = document.getElementById('breakdownTotalBudget');
+  const remainingEl = document.getElementById('breakdownRemaining');
+  const spentEl = document.getElementById('breakdownSpent');
+  const allocatedEl = document.getElementById('breakdownAllocated');
+  const incomeEl = document.getElementById('breakdownIncome');
+  const netEl = document.getElementById('breakdownNet');
 
-  mapping.forEach(([id, value]) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = formatCurrency(value);
-  });
+  if (totalEl) totalEl.textContent = formatCurrency(budget.total);
+  if (remainingEl) remainingEl.textContent = formatCurrency(remaining);
+  if (spentEl) spentEl.textContent = formatCurrency(totals.spentExcludingAllocations);
+  if (allocatedEl) allocatedEl.textContent = formatCurrency(totals.allocatedToGoals);
+  if (incomeEl) incomeEl.textContent = formatCurrency(totals.totalIncome);
+  if (netEl) netEl.textContent = formatCurrency(totals.totalIncome - totals.totalExpenses);
 
-  const utilization = budget?.total ? Math.min(100, Math.max(0, (spentExcludingAllocations / budget.total) * 100)) : 0;
   const progressFill = document.getElementById('breakdownProgressFill');
-  if (progressFill) progressFill.style.width = `${utilization}%`;
   const progressLabel = document.getElementById('breakdownProgressLabel');
-  if (progressLabel) progressLabel.textContent = `${utilization.toFixed(0)}% used`;
-
-  const categoryTotals = (Array.isArray(tx) ? tx : []).reduce((acc, transaction) => {
-    if (!transaction || transaction.type !== 'expense') return acc;
-    const categoryKey = transaction.cat || 'Uncategorized';
-    acc[categoryKey] = (acc[categoryKey] || 0) + (Number(transaction.amt) || 0);
-    return acc;
-  }, {});
+  const utilization = budget.total ? (totals.spentExcludingAllocations / budget.total) * 100 : 0;
+  if (progressFill) progressFill.style.width = `${Math.min(100, Math.max(0, utilization)).toFixed(0)}%`;
+  if (progressLabel) progressLabel.textContent = `${Math.min(100, Math.max(0, utilization)).toFixed(0)}% used`;
 
   if (breakdownCategoryList) {
     breakdownCategoryList.innerHTML = '';
-    const sorted = Object.entries(categoryTotals)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-
-    if (!sorted.length) {
+    const recent = tx.slice().reverse().slice(0, 5);
+    if (!recent.length) {
       const li = document.createElement('li');
       li.className = 'empty-row';
-      li.textContent = 'No expenses recorded yet.';
+      li.textContent = 'No activity yet.';
       breakdownCategoryList.appendChild(li);
     } else {
-      sorted.forEach(([category, amount]) => {
+      recent.forEach(item => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${category}</span><span class="amount expense">-$${(amount || 0).toFixed(2)}</span>`;
+        li.innerHTML = `<span>${item.cat || 'General'}</span><span class="amount ${item.type}">${item.type === 'income' ? '+' : '-'}$${Number(item.amt).toFixed(2)}</span>`;
         breakdownCategoryList.appendChild(li);
       });
     }
-
     const hint = document.getElementById('breakdownCategoryHint');
-    if (hint) {
-      const totalCategoryCount = Object.keys(categoryTotals).length;
-      hint.textContent = totalCategoryCount
-        ? `Showing ${Math.min(sorted.length, totalCategoryCount)} of ${totalCategoryCount} categories`
-        : 'No spending yet';
-    }
+    if (hint) hint.textContent = 'Recent activity';
   }
 }
 
@@ -417,96 +351,78 @@ budgetBreakdownModal?.addEventListener('click', (event) => {
   if (event.target === budgetBreakdownModal) closeBudgetBreakdownModal();
 });
 
+const fab = document.getElementById('fab');
+const quickAddModal = document.getElementById('quickAddModal');
+const closeModal = document.getElementById('closeModal');
+const saveTransactionBtn = document.getElementById('saveTransaction');
 
-fab.onclick = () => quickAddModal.classList.add('show')
-closeModal.onclick = () => quickAddModal.classList.remove('show')
+if (fab && quickAddModal) {
+  fab.onclick = () => quickAddModal.classList.add('show');
+}
 
-saveTransaction.onclick = () => {
-  const amountInput = document.getElementById('amountInput');
-  const noteInput = document.getElementById('noteInput');
-  const categoryInput = document.getElementById('categoryInput');
-  const typeInput = document.querySelector('input[name="txType"]:checked');
+if (closeModal && quickAddModal) {
+  closeModal.onclick = () => quickAddModal.classList.remove('show');
+}
 
-  if (!amountInput || !categoryInput || !typeInput) {
-    console.error('Required form elements not found');
-    return;
-  }
+if (saveTransactionBtn) {
+  saveTransactionBtn.onclick = () => {
+    const amountInput = document.getElementById('amountInput');
+    const noteInput = document.getElementById('noteInput');
+    const categoryInput = document.getElementById('categoryInput');
+    const typeInput = document.querySelector('input[name="txType"]:checked');
 
-  const amount = parseFloat(amountInput.value);
-  const category = categoryInput.value;
-  
-  if (isNaN(amount) || amount <= 0) {
-    alert('Please enter a valid amount');
-    return;
-  }
+    if (!amountInput || !categoryInput || !typeInput) return;
 
-  if (!category) {
-    alert('Please select a category');
-    return;
-  }
+    const amount = parseFloat(amountInput.value);
+    const category = categoryInput.value;
 
-  const transaction = {
-    id: Date.now(),
-    amt: amount,
-    cat: category,
-    type: typeInput.value,
-    merchant: document.getElementById('merchantInput')?.value || '',
-    note: noteInput ? noteInput.value : '',
-    date: new Date().toISOString(),
-    recurring: document.getElementById('recurringInput')?.value || 'no',
-    goalAllocation: document.getElementById('goalAllocationInput')?.value || '',
-  };
-
-  // Initialize tx array if it's not already an array
-  if (!Array.isArray(tx)) {
-    tx = [];
-  }
-
-  transaction.id = Date.now(); // Add unique ID to transaction
-  tx.push(transaction);
-  
-  try {
-    localStorage.setItem('transactions', JSON.stringify(tx));
-  } catch (e) {
-    console.error('Failed to save transaction:', e);
-    alert('Failed to save transaction. Please try again.');
-    return;
-  }
-
-  // If allocated to a goal, update that goal's progress
-  if (transaction.goalAllocation) {
-    try {
-      // goalAllocation is stored as goal id string - convert
-      updateGoalProgress(transaction);
-    } catch (e) {
-      console.error('Failed to update goal progress:', e);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid amount');
+      return;
     }
-  }
 
-  // Recalculate budget from all transactions to keep in sync (excludes allocations from spent)
-  try {
+    if (!category) {
+      alert('Please select a category');
+      return;
+    }
+
+    const transaction = {
+      id: Date.now(),
+      amt: amount,
+      cat: category,
+      type: typeInput.value,
+      merchant: document.getElementById('merchantInput')?.value || '',
+      note: noteInput?.value || '',
+      date: new Date().toISOString(),
+      recurring: document.getElementById('recurringInput')?.value || 'no',
+      goalAllocation: document.getElementById('goalAllocationInput')?.value || '',
+    };
+
+    if (!Array.isArray(tx)) tx = [];
+    tx.push(transaction);
+
+    if (transaction.goalAllocation) {
+      updateGoalProgress(transaction);
+    }
+
     recalcAndSaveBudget();
-  } catch (e) {
-    console.error('Failed to recalculate budget:', e);
-  }
 
-  // Clear form
-  amountInput.value = '';
-  if (noteInput) noteInput.value = '';
-  if (categoryInput.options.length) {
-    categoryInput.selectedIndex = 0;
-  } else {
-    categoryInput.value = '';
-  }
-  document.getElementById('merchantInput').value = '';
-  document.getElementById('recurringInput').value = 'no';
-  document.getElementById('goalAllocationInput').value = '';
+    // reset fields
+    amountInput.value = '';
+    if (noteInput) noteInput.value = '';
+    if (categoryInput.options.length) categoryInput.selectedIndex = 0;
+    const merchant = document.getElementById('merchantInput');
+    if (merchant) merchant.value = '';
+    const recurringSel = document.getElementById('recurringInput');
+    if (recurringSel) recurringSel.value = 'no';
+    const goalAllocSel = document.getElementById('goalAllocationInput');
+    if (goalAllocSel) goalAllocSel.value = '';
 
-  // Close modal, refresh UI
-  document.getElementById('quickAddModal')?.classList.remove('show');
-  updateBudgetDisplays();
-  updateGoalDisplays();
-  render();
+    quickAddModal.classList.remove('show');
+    updateBudgetDisplays();
+    updateGoalDisplays();
+    render();
+  };
 }
 
 function render(){
@@ -541,7 +457,6 @@ function render(){
         dateStr = 'Invalid date';
       }
 
-      // Safely format the amount
       let amountStr;
       try {
         amountStr = typeof t.amt === 'number' ? t.amt.toFixed(2) : '0.00';
@@ -566,13 +481,6 @@ function render(){
 
 // Goal Management
 let goals = [];
-try {
-  const storedGoals = localStorage.getItem('goals');
-  goals = storedGoals ? JSON.parse(storedGoals) : [];
-} catch (e) {
-  console.error('Error loading goals:', e);
-  goals = [];
-}
 
 // Goal Modal Elements
 const goalModal = document.getElementById('goalModal');
@@ -710,11 +618,7 @@ function updateGoalProgress(transaction) {
 }
 
 function saveGoals() {
-  try {
-    localStorage.setItem('goals', JSON.stringify(goals));
-  } catch (e) {
-    console.error('Failed to save goals:', e);
-  }
+  // no persistence needed
 }
 
 function updateGoalOptions(selectElement = null) {
@@ -945,7 +849,7 @@ function renderDetailedTransactions(filterCategory = 'all') {
                   <div class="transaction-note">${t.note || 'No description'}</div>
                   <div class="transaction-date">${dateStr}</div>
                 </div>
-                <button class="edit-transaction-btn" onclick='openEditModal(${JSON.stringify(t).replace(/'/g, "&apos;")})'>
+                <button class="edit-transaction-btn" type="button" data-transaction-id="${t.id}">
                   <i class="fi fi-rr-edit"></i>
                 </button>
                 <div class="amount ${t.type || 'expense'}">
@@ -961,19 +865,20 @@ function renderDetailedTransactions(filterCategory = 'all') {
   });
 
   // Update category totals
-  updateCategoryTotals(categoryTotals);
+  updateCategoryTotals();
 }
 
-function updateCategoryTotals(categoryTotals) {
+function updateCategoryTotals() {
   const totalsContainer = document.getElementById('categoryTotals');
   if (!totalsContainer) return;
 
   let totalExpense = 0;
   let totalIncome = 0;
 
-  Object.values(categoryTotals).forEach(totals => {
-    totalExpense += totals.expense;
-    totalIncome += totals.income;
+  (Array.isArray(tx) ? tx : []).forEach(t => {
+    if (!t || typeof t !== 'object') return;
+    if (t.type === 'expense') totalExpense += Number(t.amt) || 0;
+    if (t.type === 'income') totalIncome += Number(t.amt) || 0;
   });
 
   totalsContainer.innerHTML = `
@@ -1085,27 +990,19 @@ updateTransaction.onclick = () => {
     budget.remaining += amount;
   }
 
-  // Update transaction and save
   tx[transactionIndex] = newTransaction;
   
-  // Update goal progress if transaction is allocated to a goal
   if (newTransaction.goalAllocation) {
     updateGoalProgress(newTransaction);
   }
   
-  // Recalculate total budget numbers (exclude allocations from 'spent')
   recalcAndSaveBudget();
   
-  // Save all changes
-  localStorage.setItem('transactions', JSON.stringify(tx));
-  localStorage.setItem('budget', JSON.stringify(budget));
-
   editTransactionModal.classList.remove('show');
   updateBudgetDisplays();
   render();
 };
 
-// Set up event listeners for LR tab
 document.addEventListener('DOMContentLoaded', () => {
   const categoryFilter = document.getElementById('categoryFilter');
   if (categoryFilter) {
@@ -1115,12 +1012,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// LR inline form handlers
 const lrSaveBtn = document.getElementById('lr_saveTransaction');
 const lrCancelBtn = document.getElementById('lr_cancel');
 if (lrSaveBtn) {
   lrSaveBtn.addEventListener('click', () => {
-    // Build transaction from LR form
     const amount = parseFloat(document.getElementById('lr_amountInput')?.value || 0);
     const category = document.getElementById('lr_categoryInput')?.value;
     const merchant = document.getElementById('lr_merchantInput')?.value || '';
@@ -1151,20 +1046,13 @@ if (lrSaveBtn) {
       goalAllocation,
     };
 
-    // Push and save
     if (!Array.isArray(tx)) tx = [];
     tx.push(transaction);
-    try { localStorage.setItem('transactions', JSON.stringify(tx)); } catch (e) { console.error(e); }
 
-    // Update goal if allocated
     if (transaction.goalAllocation) updateGoalProgress(transaction);
 
-    // Recalc budget
-    try {
-      recalcAndSaveBudget();
-    } catch (e) { console.error(e); }
+    recalcAndSaveBudget();
 
-    // Close and refresh
     const lrCategorySelect = document.getElementById('lr_categoryInput');
     if (lrCategorySelect && lrCategorySelect.options.length) {
       lrCategorySelect.selectedIndex = 0;
@@ -1180,19 +1068,114 @@ if (lrCancelBtn) {
     document.getElementById('lr_add_form').style.display = 'none';
   });
 }
-(function () {
-  const graphSelect = document.getElementById('graph_type');
+function initGraphSwitcher() {
+  const select = document.getElementById('graph_type');
   const graphs = document.querySelectorAll('.graph');
-  if (!graphSelect || !graphs.length) return;
+  if (!select || !graphs.length) return;
 
-  function showSelectedGraph() {
-    const selected = graphSelect.value;
+  const showGraph = (id) => {
     graphs.forEach(img => {
-      img.style.display = (img.id === selected) ? 'block' : 'none';
+      img.style.display = img.id === id ? 'block' : 'none';
     });
+  };
+
+  showGraph(select.value);
+  select.addEventListener('change', (event) => showGraph(event.target.value));
+}
+
+document.addEventListener('click', (event) => {
+  const editBtn = event.target.closest('.edit-transaction-btn');
+  if (!editBtn) return;
+  const id = Number(editBtn.dataset.transactionId);
+  if (!id) return;
+  const transaction = tx.find(t => t.id === id);
+  if (transaction) openEditModal(transaction);
+});
+
+// Reminders tab
+const reminderForm = document.getElementById('reminderForm');
+const reminderNameInput = document.getElementById('reminderName');
+const reminderAmountInput = document.getElementById('reminderAmount');
+const reminderDueDateInput = document.getElementById('reminderDueDate');
+const reminderRecurringInput = document.getElementById('reminderRecurring');
+const reminderList = document.getElementById('reminderList');
+
+const today = new Date();
+const defaultDue = new Date(today.getFullYear(), today.getMonth(), 15);
+const defaultDueIso = defaultDue.toISOString().split('T')[0];
+
+let reminders = [];
+
+function renderReminders() {
+  if (!reminderList) return;
+  reminderList.innerHTML = '';
+
+  const baseCardStyle = 'background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.03);';
+  const infoStyle = 'display:flex;flex-direction:column;gap:4px;';
+  const nameStyle = 'font-size:1.05rem;font-weight:700;';
+  const metaStyle = 'color:var(--muted);font-size:0.9rem;';
+
+  if (!reminders.length) {
+    const emptyRow = document.createElement('div');
+    emptyRow.style.cssText = baseCardStyle;
+    emptyRow.innerHTML = '<div style="' + infoStyle + '"><div style="' + nameStyle + '">No reminders yet</div><div style="' + metaStyle + '">Add one using the form above.</div></div>';
+    reminderList.appendChild(emptyRow);
+    return;
   }
 
-  showSelectedGraph();
+  reminders.forEach(reminder => {
+    const row = document.createElement('div');
+    row.style.cssText = baseCardStyle;
 
-  graphSelect.addEventListener('change', showSelectedGraph);
-})();
+    const info = document.createElement('div');
+    info.style.cssText = infoStyle;
+    info.innerHTML = `
+      <div style="${nameStyle}">${reminder.name}</div>
+      <div style="${metaStyle}">$${Number(reminder.amount).toFixed(2)} • Due ${reminder.dueDate ? new Date(reminder.dueDate).toLocaleDateString() : '—'}</div>
+    `;
+
+    const pill = document.createElement('div');
+    pill.style.cssText = `padding:6px 12px;border-radius:999px;font-weight:600;font-size:0.85rem;${reminder.recurring ? 'background:rgba(74,157,124,0.15);color:var(--accent);' : 'background:rgba(220,53,69,0.1);color:var(--bad);'}`;
+    pill.textContent = reminder.recurring ? 'Recurring' : 'One-time';
+
+    row.appendChild(info);
+    row.appendChild(pill);
+    reminderList.appendChild(row);
+  });
+}
+
+function setReminderFormDefaults() {
+  if (!reminderNameInput || !reminderAmountInput || !reminderDueDateInput) return;
+  reminderNameInput.value = '';
+  reminderAmountInput.value = '';
+  reminderDueDateInput.value = defaultDueIso;
+  if (reminderRecurringInput) reminderRecurringInput.checked = false;
+}
+
+reminderForm?.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const name = reminderNameInput?.value.trim();
+  const amount = parseFloat(reminderAmountInput?.value || '0');
+  const dueDate = reminderDueDateInput?.value;
+  const recurring = !!reminderRecurringInput?.checked;
+
+  if (!name || isNaN(amount) || !dueDate) {
+    alert('Enter a name, amount, and due date.');
+    return;
+  }
+
+  reminders.push({
+    id: Date.now(),
+    name,
+    amount,
+    dueDate,
+    recurring
+  });
+
+  renderReminders();
+  reminderForm.reset();
+});
+
+setReminderFormDefaults();
+renderReminders();
+initGraphSwitcher();

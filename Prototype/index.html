@@ -12,7 +12,6 @@
 <body>
   <div id="app">
     <header class="app-header">
-      <div class="status-bar">10:30 AM</div>
       <h1>SpendSense</h1>
     </header>
     <div id="content">
@@ -22,12 +21,12 @@
 
     <!-- Budget header card -->
     <section class="card budget-card" style="max-width:600px;margin:12px auto 16px;">
-      <div class="month">October Budget</div>
+      <div class="month">Monthly Budget</div>
       <div class="subtle">Remaining</div>
-      <button class="amount-remaining" id="remainingAmount" type="button" aria-label="Open detailed budget breakdown">$1,250.75</button>
+      <button class="amount-remaining" id="remainingAmount" type="button" aria-label="Open detailed budget breakdown">$0.00</button>
       <div class="row fineprint">
-        <span id="totalBudgetLabel">Total Budget: $2,500.00</span>
-        <span id="spentSoFarLabel">Spent So Far: $1,249.25</span>
+        <span id="totalBudgetLabel">Total Budget: $0.00</span>
+        <span id="spentSoFarLabel">Spent So Far: $0.00</span>
       </div>
     </section>
 
@@ -254,7 +253,6 @@
           </div>
         </div>
 
-        <!-- Inline LR add form (survey style) -->
         <div id="lr_add_form" class="lr-add-form" style="display:none; margin-top:16px;">
           <div class="form-grid">
             <div class="form-section">
@@ -325,10 +323,8 @@
 
         <div class="transactions-container">
           <div class="transactions-by-category">
-            <!-- Categories will be dynamically inserted here -->
           </div>
           <div id="categoryTotals" class="category-totals">
-            <!-- Category totals will be displayed here -->
           </div>
         </div>
       </section>
@@ -340,31 +336,15 @@
           <img id="avatar" src="images/testy.png" alt="Profile" />
           <div class="name">Testudo</div>
         </div>
-      <div id="profile_notification" class="notification_overlay">
-        <div class="notification_box">
-          <div class="notification_title">Hello!</div>
-          <div class="notification_text">You tapped the profile image.</div>
-          <button id="close_notification">Close</button>
-        </div>
+          <section class="card budget-card" style="max-width:600px;margin:12px auto 16px;">
+      <div class="month">November Monthly Budget</div>
+      <div class="subtle">Remaining</div>
+      <button class="amount-remaining" id="remainingAmount" type="button" aria-label="Open detailed budget breakdown">$0.00</button>
+      <div class="row fineprint">
+        <span id="totalBudgetLabel">Total Budget: $0.00</span>
+        <span id="spentSoFarLabel">Spent So Far: $0.00</span>
       </div>
-      <div class="budget-card">
-        <h2 class="budget-title">October Budget</h2>
-        <p class="budget-label">Remaining</p>
-        <div class="budget-amount">$1,250.75</div>
-        <div class="budget-details">
-          <div class="budget-item">
-            <div class="budget-item-label">Total Budget</div>
-            <div class="budget-item-value" id="profileTotalBudgetValue">$2,500.00</div>
-          </div>
-          <div class="budget-item">
-            <div class="budget-item-label">Spent So Far</div>
-            <div class="budget-item-value" id="profileSpentValue">$1,249.25</div>
-          </div>
-        </div>
-        <div class="income-line">
-          <span class="income-label">Monthly Income: $3,000.00</span>
-        </div>
-      </div>
+    </section>
 
       <div class="card custom-categories-card">
         <div class="custom-category-header">
@@ -377,7 +357,6 @@
         <ul id="customCategoriesList" class="custom-category-list" aria-live="polite"></ul>
       </div>
 
-      <!-- Create Category Modal (scoped to Profile) -->
       <div id="createCategoryModal" class="modal" aria-hidden="true">
         <div class="modal-content create-category-modal" role="dialog" aria-modal="true" aria-labelledby="createCategoryTitle">
           <button class="modal-close" id="closeCategoryModal" aria-label="Close category modal">&times;</button>
@@ -475,51 +454,33 @@
         </div>
       </section>
 
-      <!-- Reminders Tab (Minimal) -->
-      <section id="reminders_tab" class="tab" style="font-family:Arial, sans-serif; padding:16px;">
+      <!-- Reminders Tab -->
+      <section id="reminders_tab" class="tab" style="padding:16px;">
         <h2>Reminders</h2>
-        <p>Track bills and payments.</p>
+        <p style="color:var(--muted);margin:0 0 12px;font-size:0.95rem;">Track bills and payments.</p>
 
-        <form style="margin-bottom:16px;">
-          <label>
-            Reminder Name<br>
-            <input id="rName" type="text" placeholder="e.g., Rent" required>
-          </label><br><br>
-
-          <label>
-            Amount ($)<br>
-            <input id="amount" type="number" min="0" step="0.01" placeholder="0.00" required>
-          </label><br><br>
-
-          <label>
-            Due Date<br>
-            <input type="date" id="dueDate" required>
-          </label><br><br>
-
-          <label>
-            <input type="checkbox" id="recurring"> Recurring
-          </label><br><br>
-
-          <button
-            type="button"
-            style="background:#4a9d7c;color:#fff;border:none;padding:8px 16px;cursor:pointer;"
-            onclick="document.getElementById('list').innerHTML += '<p>' + document.getElementById('rName').value + ' • $' + document.getElementById('amount').value + ' • Due ' + document.getElementById('dueDate').value + ' • ' + (document.getElementById('recurring').checked ? 'Recurring' : 'One-time') + '</p>'">
-            Add Reminder
-          </button>
-        </form>
-
-        <h3>Upcoming Reminders</h3>
-        <div>
-          <p><strong>Phone Bill</strong><br>$65.00 • Due 10/15/2025 • Recurring</p>
-          <hr>
-          <p><strong>Car Insurance</strong><br>$120.00 • Due 11/01/2025 • One-time</p>
-          <hr>
-          <p><strong>Water Bill</strong><br>$40.00 • Due 11/10/2025 • Recurring</p>
+        <div style="background:var(--panel);padding:18px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,0.04);margin-bottom:18px;">
+          <form id="reminderForm" style="display:flex;flex-direction:column;gap:12px;">
+            <label style="font-weight:600;color:var(--text);display:flex;flex-direction:column;gap:6px;">
+              Reminder Name
+              <input id="reminderName" type="text" placeholder="e.g., Rent" required style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            </label>
+            <label style="font-weight:600;color:var(--text);display:flex;flex-direction:column;gap:6px;">
+              Amount ($)
+              <input id="reminderAmount" type="number" min="0" step="0.01" placeholder="0.00" required style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            </label>
+            <label style="font-weight:600;color:var(--text);display:flex;flex-direction:column;gap:6px;">
+              Due Date
+              <input type="date" id="reminderDueDate" required style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--text);">
+              <input type="checkbox" id="reminderRecurring"> Recurring
+            </label>
+            <button type="submit" class="btn btn-primary" style="width:100%;">Add Reminder</button>
+          </form>
         </div>
 
-        <div id="list">
-        </div>
-
+        <div id="reminderList" aria-live="polite" style="display:flex;flex-direction:column;gap:12px;"></div>
       </section>
 
 
