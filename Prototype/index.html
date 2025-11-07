@@ -471,31 +471,28 @@
       </div>
       </section>
 
-      <!-- tab 5: choices -->
+      <!-- tab 5:TRENDS TAB: has the charts/grpahs -->
       <section id="choices_tab" class="tab">
-        <h2>Choices</h2>
+        <h2>Trends</h2>
         <div class="card">
           <div class="row">
-            <label><input type="radio" name="termLength" value="Monthly" checked /> Monthly</label>
-            <label><input type="radio" name="termLength" value="Anually" /> Anually</label>
-          </div>
-          <div class="row">
-            <label for="expense">Expense</label>
-            <select id="expense">
-              <option value="Car">Car</option>
-              <option value="House">House</option>
-              <option value="Vacation">Vacation</option>
-              <option value="Loans">Loans</option>
-              <option value="Groceries">Groceries</option>
-              <option value="Miscellaneous">Miscellaneous</option>
+            <label for="graph_type">Graph: </label>
+            <select id="graph_type">
+              <option value="spendingByCategory">Monthly Spending</option>
+              <option value="budgetVsActual">Spending vs Budget</option>
+              <option value="incomeTrends">Income vs Expenses</option>
+              <option value="spendingBreakdown">Spending Breakdown</option>
+              <option value="goalProgress">Goal Progress</option>
 
             </select>
+          </div>
 
-          </div>
-          <div class="row">
-            <button class="go" id="show_choice">Show Selection</button>
-          </div>
-          <div class="out" id="choice_output"></div>
+        <div id="graph_output">
+          <img src="images/SpendingbyCategory.png" id="spendingByCategory" class="graph" alt="Spending by Category" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
+          <img src="images/SpendingvBudget.png" id="budgetVsActual" class="graph" alt="Budget vs Actual" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
+          <img src="images/IncomevExpenses.png" id="incomeTrends" class="graph" alt="Income Trends" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
+          <img src="images/Spending.png" id="spendingBreakdown" class="graph" alt="Spending Breakdown" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
+          <img src="images/GoalProgress.png" id="goalProgress" class="graph" alt="Goal Progress" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
         </div>
       </section>
 

@@ -520,13 +520,26 @@ avatar.addEventListener("click", () => {
 closeNotification.addEventListener("click", () => {
   notification.style.display = "none";
 });
-// choices
-const out = document.getElementById('choice_output');
-document.getElementById('show_choice').addEventListener('click', () => {
-  const termLength = (document.querySelector('input[name="termLength"]:checked') || {}).value;
-  const expense = document.getElementById('expense').value;
-  out.textContent = `You chose: ${termLength} • ${expense}`;
+
+
+// trends: shows grpahs based on option slected
+const graphSelect = document.getElementById('graph_type');
+const graphs = document.querySelectorAll('.graph');
+
+graphSelect.addEventListener('change', () => {
+  const selected = graphSelect.value;
+  
+  graphs.forEach(img => {
+    if (selected === 'all' || img.id === selected) {
+      img.style.display = 'block';
+    } else {
+      img.style.display = 'none';
+    }
+  });
 });
+
+
+
 
 // Function to render transactions grouped by category
 function renderDetailedTransactions(filterCategory = 'all') {
