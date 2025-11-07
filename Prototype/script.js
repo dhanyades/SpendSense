@@ -786,51 +786,6 @@ document.addEventListener('DOMContentLoaded', () => {
       renderDetailedTransactions(e.target.value);
     });
   }
-
-  // Transaction page Add Expense / Add Income buttons
-  const addExpenseBtn = document.getElementById('addExpenseBtn');
-  if (addExpenseBtn) {
-    addExpenseBtn.addEventListener('click', () => {
-      // Show inline LR form and prefill type
-      const lrForm = document.getElementById('lr_add_form');
-      if (!lrForm) return;
-      // Reset fields
-      document.getElementById('lr_amountInput').value = '';
-      document.getElementById('lr_merchantInput').value = '';
-      document.getElementById('lr_noteInput').value = '';
-      document.getElementById('lr_categoryInput').selectedIndex = 0;
-      document.getElementById('lr_recurringInput').value = 'no';
-      document.getElementById('lr_priorityInput').value = 'optional';
-      // set type
-      const lrType = document.querySelector('input[name="lr_txType"][value="expense"]');
-      if (lrType) lrType.checked = true;
-      // populate goals
-      updateGoalOptions();
-      // show
-      lrForm.style.display = 'block';
-      // focus amount
-      document.getElementById('lr_amountInput')?.focus();
-    });
-  }
-
-  const addIncomeBtn = document.getElementById('addIncomeBtn');
-  if (addIncomeBtn) {
-    addIncomeBtn.addEventListener('click', () => {
-      const lrForm = document.getElementById('lr_add_form');
-      if (!lrForm) return;
-      document.getElementById('lr_amountInput').value = '';
-      document.getElementById('lr_merchantInput').value = '';
-      document.getElementById('lr_noteInput').value = '';
-      document.getElementById('lr_categoryInput').selectedIndex = 0;
-      document.getElementById('lr_recurringInput').value = 'no';
-      document.getElementById('lr_priorityInput').value = 'optional';
-      const lrType = document.querySelector('input[name="lr_txType"][value="income"]');
-      if (lrType) lrType.checked = true;
-      updateGoalOptions();
-      lrForm.style.display = 'block';
-      document.getElementById('lr_amountInput')?.focus();
-    });
-  }
 });
 
 // LR inline form handlers

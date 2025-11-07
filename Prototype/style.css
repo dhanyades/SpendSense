@@ -113,7 +113,7 @@ h2 {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  z-index: 1000;
+  z-index: 1500;
   align-items: center;
   justify-content: center;
 }
@@ -124,8 +124,8 @@ h2 {
   background: var(--panel);
   color: var(--text);
   width: 94vw;
-  max-width: 300px;
-  max-height: 80vh;
+  max-width: 550px;
+  max-height: 60vh;
   overflow-y: auto;
   border-radius: 12px;
   padding: 18px;
@@ -155,6 +155,8 @@ h2 {
   gap: 8px;
   justify-content: flex-end;
 }
+
+
 .btn {
   padding: 10px 16px;
   border-radius: 10px;
@@ -262,11 +264,6 @@ h2 {
   gap: 16px;
 }
 
-.transaction-actions {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-}
 
 .action-btn {
   padding: 12px 20px;
@@ -295,12 +292,7 @@ h2 {
   color: white;
 }
 
-.action-btn:hover {
-    width: 98vw;
-    max-width: 340px;
-    max-height: 80vh;
-    overflow-y: auto;
-}
+
 
 .category-filter {
   width: 100%;
@@ -369,55 +361,15 @@ h2 {
 }
 
 .edit-transaction-btn {
-  opacity: 0;
   position: absolute;
-  right: 85px;
+  right: 90px;
   background: none;
   border: none;
   cursor: pointer;
   padding: 4px 8px;
   color: var(--muted);
-  transition: opacity 0.2s ease-in-out;
   display: flex;
   align-items: center;
-}
-
-.transaction-item:hover .edit-transaction-btn {
-  opacity: 1;
-}
-
-.edit-transaction-btn:hover {
-  color: var(--accent);
-}
-
-.edit-transaction-btn i {
-  font-size: 16px;
-}
-
-/* Modal styles */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal.show {
-  display: flex;
-}
-
-.modal-content {
-  /* ...existing code... */
-}
-
-.modal-content.wide-modal {
-  max-width: 800px;
 }
 
 .form-grid {
@@ -1044,10 +996,14 @@ h2 {
 /* nav bar */
 #navigationBar{
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   bottom: 0;
   width: min(640px, 100%);
+
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+
   background: var(--nav-bg);
   display: flex;
   justify-content: center;
