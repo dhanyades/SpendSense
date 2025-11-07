@@ -24,10 +24,9 @@
     <section class="card budget-card" style="max-width:600px;margin:12px auto 16px;">
       <div class="month">October Budget</div>
       <div class="subtle">Remaining</div>
-      <div class="amount-remaining" id="remainingAmount">$1,250.75</div>
+      <button class="amount-remaining" id="remainingAmount" type="button" aria-label="Open detailed budget breakdown">$1,250.75</button>
       <div class="row fineprint">
         <span id="totalBudgetLabel">Total Budget: $2,500.00</span>
-        <span id="allocatedToGoalsLabel">Allocated to Goals: $0.00</span>
         <span id="spentSoFarLabel">Spent So Far: $1,249.25</span>
       </div>
     </section>
@@ -38,9 +37,6 @@
       <br>
       <ul id="transactionsList" class="activity-list"></ul>
     </section>
-
-    <!-- Floating Action Button -->
-    <button id="fab" aria-label="Add transaction">+</button>
 
     <!-- Quick-Add Modal -->
     <div id="quickAddModal" class="modal" aria-hidden="true">
@@ -60,18 +56,9 @@
               <input type="number" id="amountInput" placeholder="0.00" min="0" step="0.01" />
             </div>
             
-            <div class="input-group">
+            <div class="input-group category-select-group">
               <label for="categoryInput">Category</label>
-              <select id="categoryInput">
-                <option value="" disabled selected>Select category</option>
-                <option>Groceries</option>
-                <option>Rent</option>
-                <option>Utilities</option>
-                <option>Transportation</option>
-                <option>Dining</option>
-                <option>Entertainment</option>
-                <option>Miscellaneous</option>
-              </select>
+              <select id="categoryInput" data-placeholder="Select category"></select>
             </div>
           </div>
 
@@ -96,8 +83,7 @@
                 <option value="no">No</option>
                 <option value="monthly">Monthly</option>
                 <option value="weekly">Weekly</option>
-                <option value="yearly">Yearly</option>
-              </select>
+\              </select>
             </div>
 
             <div class="input-group">
@@ -108,14 +94,6 @@
               </select>
             </div>
 
-            <div class="input-group">
-              <label for="priorityInput">Priority Level</label>
-              <select id="priorityInput">
-                <option value="essential">Essential</option>
-                <option value="important">Important</option>
-                <option value="optional">Optional</option>
-              </select>
-            </div>
           </div>
         </div>
 
@@ -126,6 +104,58 @@
       </div>
     </div>
 
+    <!-- Budget Breakdown Modal -->
+    <div id="budgetBreakdownModal" class="modal" aria-hidden="true">
+      <div class="modal-content breakdown-modal" role="dialog" aria-modal="true" aria-labelledby="budgetBreakdownTitle">
+        <button class="modal-close" id="closeBreakdownModal" aria-label="Close budget breakdown">&times;</button>
+        <h3 id="budgetBreakdownTitle">Budget Breakdown</h3>
+        <p class="modal-subtext">See how your October budget is allocated.</p>
+        <div class="breakdown-grid">
+          <div>
+            <div class="breakdown-label">Total Budget</div>
+            <div class="breakdown-value" id="breakdownTotalBudget">$0.00</div>
+          </div>
+          <div>
+            <div class="breakdown-label">Remaining</div>
+            <div class="breakdown-value accent" id="breakdownRemaining">$0.00</div>
+          </div>
+          <div>
+            <div class="breakdown-label">Spent So Far</div>
+            <div class="breakdown-value danger" id="breakdownSpent">$0.00</div>
+          </div>
+          <div>
+            <div class="breakdown-label">Allocated to Goals</div>
+            <div class="breakdown-value" id="breakdownAllocated">$0.00</div>
+          </div>
+          <div>
+            <div class="breakdown-label">Income Logged</div>
+            <div class="breakdown-value good" id="breakdownIncome">$0.00</div>
+          </div>
+          <div>
+            <div class="breakdown-label">Net Position</div>
+            <div class="breakdown-value" id="breakdownNet">$0.00</div>
+          </div>
+        </div>
+        <div class="progress-wrapper">
+          <div class="progress-header">
+            <span>Budget Utilization</span>
+            <span id="breakdownProgressLabel">0% used</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="breakdownProgressFill" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="breakdown-categories">
+          <div class="breakdown-categories-header">
+            <h4>Top Spending Categories</h4>
+            <span id="breakdownCategoryHint">Last 5 expenses</span>
+          </div>
+          <ul id="breakdownCategoryList"></ul>
+        </div>
+      </div>
+    </div>
+        <!-- Floating Action Button -->
+    <button id="fab" aria-label="Add transaction">+</button>
     <!-- toasts -->
     <div id="txFeed" aria-live="polite"></div>
   </section>
@@ -184,7 +214,6 @@
               <option value="no">No</option>
               <option value="monthly">Monthly</option>
               <option value="weekly">Weekly</option>
-              <option value="yearly">Yearly</option>
             </select>
           </div>
 
@@ -196,14 +225,6 @@
             </select>
           </div>
 
-          <div class="input-group">
-            <label for="editPriorityInput">Priority Level</label>
-            <select id="editPriorityInput">
-              <option value="essential">Essential</option>
-              <option value="important">Important</option>
-              <option value="optional">Optional</option>
-            </select>
-          </div>
         </div>
       </div>
 
@@ -277,7 +298,6 @@
                   <option value="no">No</option>
                   <option value="monthly">Monthly</option>
                   <option value="weekly">Weekly</option>
-                  <option value="yearly">Yearly</option>
                 </select>
               </div>
               <div class="input-group">
@@ -286,14 +306,7 @@
                   <option value="">None</option>
                 </select>
               </div>
-              <div class="input-group">
-                <label for="lr_priorityInput">Priority Level</label>
-                <select id="lr_priorityInput">
-                  <option value="essential">Essential</option>
-                  <option value="important">Important</option>
-                  <option value="optional">Optional</option>
-                </select>
-              </div>
+              
               <div class="input-group">
                 <label>Type</label>
                 <div style="display:flex;gap:12px;align-items:center">
@@ -316,103 +329,6 @@
           </div>
           <div id="categoryTotals" class="category-totals">
             <!-- Category totals will be displayed here -->
-          </div>
-        </div>
-      </section>
-
-      <!-- tab 3: goals -->
-      <section id="colors_tab" class="tab">
-        <h2>Goals</h2>
-        <div class="goals-container">
-          <!-- Goal Summary Cards -->
-          <div class="goals-overview">
-            <div class="summary-card total-goals">
-              <i class="fi fi-rr-target"></i>
-              <div class="summary-content">
-                <div class="summary-label">Active Goals</div>
-                <div class="summary-value" id="totalGoalsCount">0</div>
-              </div>
-            </div>
-            <div class="summary-card total-progress">
-              <i class="fi fi-rr-chart-line-up"></i>
-              <div class="summary-content">
-                <div class="summary-label">Average Progress</div>
-                <div class="summary-value" id="averageProgress">0%</div>
-              </div>
-            </div>
-            <div class="summary-card total-saved">
-              <!-- Inline SVG money icon to avoid missing icon-font issues -->
-              <svg class="summary-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="6" width="22" height="12" rx="2" ry="2" fill="currentColor" opacity="0.08"/>
-                <rect x="3" y="8" width="18" height="8" rx="1" ry="1" fill="none" stroke="currentColor" stroke-width="1.2"/>
-                <text x="12" y="13.2" text-anchor="middle" font-size="9" fill="currentColor" font-family="Arial, Helvetica, sans-serif" font-weight="700">$</text>
-              </svg>
-              <div class="summary-content">
-                <div class="summary-label">Total Saved</div>
-                <div class="summary-value" id="totalSaved">$0</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Goals List -->
-          <div class="goals-management">
-            <div class="goals-header">
-              <h3>Your Goals</h3>
-              <button id="addGoalBtn" class="btn btn-primary">
-                <i class="fi fi-rr-plus"></i> New Goal
-              </button>
-            </div>
-            
-            <div class="goals-list">
-              <!-- Goals will be dynamically inserted here -->
-            </div>
-          </div>
-
-          <!-- Add/Edit Goal Modal -->
-          <div id="goalModal" class="modal" aria-hidden="true">
-            <div class="modal-content" role="dialog" aria-modal="true">
-              <h3 id="goalModalTitle">Add New Goal</h3>
-              
-              <div class="input-group">
-                <label for="goalName">Goal Name</label>
-                <input type="text" id="goalName" placeholder="e.g., New Car" />
-              </div>
-
-              <div class="input-group">
-                <label for="goalAmount">Target Amount ($)</label>
-                <input type="number" id="goalAmount" min="0" step="0.01" placeholder="0.00" />
-              </div>
-
-              <div class="input-group">
-                <label for="goalDeadline">Target Date</label>
-                <input type="date" id="goalDeadline" />
-              </div>
-
-              <div class="input-group">
-                <label for="goalCategory">Category</label>
-                <select id="goalCategory">
-                  <option value="savings">Savings</option>
-                  <option value="purchase">Major Purchase</option>
-                  <option value="emergency">Emergency Fund</option>
-                  <option value="debt">Debt Payoff</option>
-                  <option value="education">Education</option>
-                  <option value="travel">Travel</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div class="input-group">
-                <label for="goalNotes">Notes</label>
-                <textarea id="goalNotes" placeholder="Add any additional details about your goal..."></textarea>
-              </div>
-
-              <input type="hidden" id="editGoalId" />
-
-              <div class="modal-actions">
-                <button id="saveGoal" class="btn btn-primary">Save Goal</button>
-                <button id="closeGoalModal" class="btn">Cancel</button>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -441,10 +357,6 @@
             <div class="budget-item-value" id="profileTotalBudgetValue">$2,500.00</div>
           </div>
           <div class="budget-item">
-            <div class="budget-item-label">Allocated to Goals</div>
-            <div class="budget-item-value" id="profileAllocatedValue">$0.00</div>
-          </div>
-          <div class="budget-item">
             <div class="budget-item-label">Spent So Far</div>
             <div class="budget-item-value" id="profileSpentValue">$1,249.25</div>
           </div>
@@ -453,26 +365,93 @@
           <span class="income-label">Monthly Income: $3,000.00</span>
         </div>
       </div>
-      <div class="goals-box">
-        <h3 class="goals-title">Goals</h3>
-        <div class="goal-item">
-          <div class="goal-header">
-            <span class="goal-label">Short Term Goal</span>
+
+      <div class="card custom-categories-card">
+        <div class="custom-category-header">
+          <div>
+            <h3>Categories</h3>
+            <p class="custom-category-hint">Custom categories appear in Quick-Add, Transactions, and Goals.</p>
           </div>
-          <div class="goal-name">New Laptop: $700 / $1,50</div>
+          <button id="manageCategoriesBtn" class="btn btn-primary">Manage Custom Category</button>
         </div>
-        
-        <div class="goal-item">
-          <div class="goal-header">
-            <span class="goal-label">Long Term Goal</span>
+        <ul id="customCategoriesList" class="custom-category-list" aria-live="polite"></ul>
+      </div>
+
+      <!-- Create Category Modal (scoped to Profile) -->
+      <div id="createCategoryModal" class="modal" aria-hidden="true">
+        <div class="modal-content create-category-modal" role="dialog" aria-modal="true" aria-labelledby="createCategoryTitle">
+          <button class="modal-close" id="closeCategoryModal" aria-label="Close category modal">&times;</button>
+          <h3 id="createCategoryTitle">Create Category</h3>
+          <p class="modal-subtext">Name a new budget category so you can tag future expenses with it.</p>
+          <div class="input-group">
+            <label for="newCategoryName">Category Name</label>
+            <input type="text" id="newCategoryName" placeholder="e.g., Pets" />
           </div>
-          <div class="goal-name">New Car: $5,000 / $20,000</div>
+          <div class="input-group">
+            <label for="categoryPurpose">Purpose</label>
+            <textarea id="categoryPurpose" placeholder="Why are you creating this bucket? (optional)"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button id="saveCategory" class="btn btn-primary">Save Category</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-goal-actions">
+        <button id="addGoalBtn" class="btn btn-primary"><i class="fi fi-rr-plus"></i> Add Goal</button>
+      </div>
+
+      <section id="profileGoalsMirror" class="profile-goals-mirror card" aria-live="polite"></section>
+
+      <div id="goalModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true">
+          <h3 id="goalModalTitle">Add New Goal</h3>
+          
+          <div class="input-group">
+            <label for="goalName">Goal Name</label>
+            <input type="text" id="goalName" placeholder="e.g., New Car" />
+          </div>
+
+          <div class="input-group">
+            <label for="goalAmount">Target Amount ($)</label>
+            <input type="number" id="goalAmount" min="0" step="0.01" placeholder="0.00" />
+          </div>
+
+          <div class="input-group">
+            <label for="goalDeadline">Target Date</label>
+            <input type="date" id="goalDeadline" />
+          </div>
+
+          <div class="input-group">
+            <label for="goalCategory">Category</label>
+            <select id="goalCategory">
+              <option value="savings">Savings</option>
+              <option value="purchase">Major Purchase</option>
+              <option value="emergency">Emergency Fund</option>
+              <option value="debt">Debt Payoff</option>
+              <option value="education">Education</option>
+              <option value="travel">Travel</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="goalNotes">Notes</label>
+            <textarea id="goalNotes" placeholder="Add any additional details about your goal..."></textarea>
+          </div>
+
+          <input type="hidden" id="editGoalId" />
+
+          <div class="modal-actions">
+            <button id="saveGoal" class="btn btn-primary">Save Goal</button>
+            <button id="closeGoalModal" class="btn">Cancel</button>
+          </div>
         </div>
       </div>
       </section>
 
-      <!-- tab 5:TRENDS TAB: has the charts/grpahs -->
-      <section id="choices_tab" class="tab">
+      <!-- tab 5: choices -->
+      <section id="trends_tab" class="tab">
         <h2>Trends</h2>
         <div class="card">
           <div class="row">
@@ -495,33 +474,63 @@
           <img src="images/GoalProgress.png" id="goalProgress" class="graph" alt="Goal Progress" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
         </div>
       </section>
+      <!-- Reminders Tab (Minimal) -->
+      <section id="reminders_tab" class="tab" style="font-family:Arial, sans-serif; padding:16px;">
+        <h2>Reminders</h2>
+        <p>Track bills and payments.</p>
 
-      <!-- tab 6: todo -->
-      <section id="todo_tab" class="tab">
-        <h2>Tasks</h2>
-        <div class="todo">
-          <div class="todo-input-container">
-            <input id="todo_input" type="text" placeholder="Add a new task..." />
-            <button id="todo_add" class="add-btn">Add Task</button>
-          </div>
-          <ul id="todo_list" class="todo-list"></ul>
+        <form style="margin-bottom:16px;">
+          <label>
+            Reminder Name<br>
+            <input id="rName" type="text" placeholder="e.g., Rent" required>
+          </label><br><br>
+
+          <label>
+            Amount ($)<br>
+            <input id="amount" type="number" min="0" step="0.01" placeholder="0.00" required>
+          </label><br><br>
+
+          <label>
+            Due Date<br>
+            <input type="date" id="dueDate" required>
+          </label><br><br>
+
+          <label>
+            <input type="checkbox" id="recurring"> Recurring
+          </label><br><br>
+
+          <button
+            type="button"
+            style="background:#4a9d7c;color:#fff;border:none;padding:8px 16px;cursor:pointer;"
+            onclick="document.getElementById('list').innerHTML += '<p>' + document.getElementById('rName').value + ' • $' + document.getElementById('amount').value + ' • Due ' + document.getElementById('dueDate').value + ' • ' + (document.getElementById('recurring').checked ? 'Recurring' : 'One-time') + '</p>'">
+            Add Reminder
+          </button>
+        </form>
+
+        <h3>Upcoming Reminders</h3>
+        <div>
+          <p><strong>Phone Bill</strong><br>$65.00 • Due 10/15/2025 • Recurring</p>
+          <hr>
+          <p><strong>Car Insurance</strong><br>$120.00 • Due 11/01/2025 • One-time</p>
+          <hr>
+          <p><strong>Water Bill</strong><br>$40.00 • Due 11/10/2025 • Recurring</p>
         </div>
+
+        <div id="list">
+        </div>
+
       </section>
-    </div>
+
 
     <!-- navigation  bar -->
     <nav id="navigationBar">
       <button id="tab-text" class="active" data-target="#text_tab">
-        <i class="fi fi-rr-home"></i>
-        <span>Home</span>
+        <i class="fi fi-rr-dashboard"></i>
+        <span>Dashboard</span>
       </button>
       <button id="tab-lr" data-target="#lr_tab" data-label="transactions">
         <i class="fi fi-rr-money"></i>
         <span>Transactions</span>
-      </button>
-      <button id="tab-colors" data-target="#colors_tab">
-        <i class="fi fi-rr-target"></i>
-        <span>Goals</span>
       </button>
       <button id="tab-profile" data-target="#profile_tab">
         <i class="fi fi-rr-user"></i>
@@ -531,9 +540,9 @@
         <i class="fi fi-rr-choose"></i>
         <span>Choices</span>
       </button>
-      <button id="tab-todo" data-target="#todo_tab">
+      <button id="tab-todo" data-target="#reminders_tab">
         <i class="fi fi-rr-task-checklist"></i>
-        <span>ToDo</span>
+        <span>Reminders</span>
       </button>
     </nav>
   </div>
