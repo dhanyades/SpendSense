@@ -27,7 +27,6 @@
       <button class="amount-remaining" id="remainingAmount" type="button" aria-label="Open detailed budget breakdown">$1,250.75</button>
       <div class="row fineprint">
         <span id="totalBudgetLabel">Total Budget: $2,500.00</span>
-        <span id="allocatedToGoalsLabel">Allocated to Goals: $0.00</span>
         <span id="spentSoFarLabel">Spent So Far: $1,249.25</span>
       </div>
     </section>
@@ -84,8 +83,7 @@
                 <option value="no">No</option>
                 <option value="monthly">Monthly</option>
                 <option value="weekly">Weekly</option>
-                <option value="yearly">Yearly</option>
-              </select>
+\              </select>
             </div>
 
             <div class="input-group">
@@ -96,14 +94,6 @@
               </select>
             </div>
 
-            <div class="input-group">
-              <label for="priorityInput">Priority Level</label>
-              <select id="priorityInput">
-                <option value="essential">Essential</option>
-                <option value="important">Important</option>
-                <option value="optional">Optional</option>
-              </select>
-            </div>
           </div>
         </div>
 
@@ -164,7 +154,8 @@
         </div>
       </div>
     </div>
-
+        <!-- Floating Action Button -->
+    <button id="fab" aria-label="Add transaction">+</button>
     <!-- toasts -->
     <div id="txFeed" aria-live="polite"></div>
   </section>
@@ -223,7 +214,6 @@
               <option value="no">No</option>
               <option value="monthly">Monthly</option>
               <option value="weekly">Weekly</option>
-              <option value="yearly">Yearly</option>
             </select>
           </div>
 
@@ -235,14 +225,6 @@
             </select>
           </div>
 
-          <div class="input-group">
-            <label for="editPriorityInput">Priority Level</label>
-            <select id="editPriorityInput">
-              <option value="essential">Essential</option>
-              <option value="important">Important</option>
-              <option value="optional">Optional</option>
-            </select>
-          </div>
         </div>
       </div>
 
@@ -253,18 +235,11 @@
         <button id="closeEditModal" class="btn">Cancel</button>
       </div>
     </div>
-  </div>      <!-- tab 2: Transactions -->
+  </div>      
+  <!-- tab 2: Transactions -->
       <section id="lr_tab" class="tab">
-        <h2>All Transactions</h2>
+        <h2>November Transaction History</h2>
         <div class="transactions-header">
-          <div class="transaction-actions">
-            <button id="addExpenseBtn" class="action-btn expense-btn">
-              <i class="fi fi-rr-minus"></i> Add Expense
-            </button>
-            <button id="addIncomeBtn" class="action-btn income-btn">
-              <i class="fi fi-rr-plus"></i> Add Income
-            </button>
-          </div>
           <div class="category-filter">
             <select id="categoryFilter">
               <option value="all">All Categories</option>
@@ -323,7 +298,6 @@
                   <option value="no">No</option>
                   <option value="monthly">Monthly</option>
                   <option value="weekly">Weekly</option>
-                  <option value="yearly">Yearly</option>
                 </select>
               </div>
               <div class="input-group">
@@ -332,14 +306,7 @@
                   <option value="">None</option>
                 </select>
               </div>
-              <div class="input-group">
-                <label for="lr_priorityInput">Priority Level</label>
-                <select id="lr_priorityInput">
-                  <option value="essential">Essential</option>
-                  <option value="important">Important</option>
-                  <option value="optional">Optional</option>
-                </select>
-              </div>
+              
               <div class="input-group">
                 <label>Type</label>
                 <div style="display:flex;gap:12px;align-items:center">
@@ -388,10 +355,6 @@
           <div class="budget-item">
             <div class="budget-item-label">Total Budget</div>
             <div class="budget-item-value" id="profileTotalBudgetValue">$2,500.00</div>
-          </div>
-          <div class="budget-item">
-            <div class="budget-item-label">Allocated to Goals</div>
-            <div class="budget-item-value" id="profileAllocatedValue">$0.00</div>
           </div>
           <div class="budget-item">
             <div class="budget-item-label">Spent So Far</div>
@@ -487,46 +450,78 @@
       </div>
       </section>
 
-      <!-- tab 5: choices -->
-      <section id="trends_tab" class="tab">
+      <!-- tab 5: trends -->
+      <section id="choices_tab" class="tab">
         <h2>Trends</h2>
         <div class="card">
           <div class="row">
-            <label><input type="radio" name="termLength" value="Monthly" checked /> Monthly</label>
-            <label><input type="radio" name="termLength" value="Anually" /> Anually</label>
-          </div>
-          <div class="row">
-            <label for="expense">Expense</label>
-            <select id="expense">
-              <option value="Car">Car</option>
-              <option value="House">House</option>
-              <option value="Vacation">Vacation</option>
-              <option value="Loans">Loans</option>
-              <option value="Groceries">Groceries</option>
-              <option value="Miscellaneous">Miscellaneous</option>
+            <label for="graph_type">Graph: </label>
+            <select id="graph_type">
+              <option value="spendingByCategory">Monthly Spending</option>
+              <option value="budgetVsActual">Spending vs Budget</option>
+              <option value="incomeTrends">Income vs Expenses</option>
+              <option value="spendingBreakdown">Spending Breakdown</option>
+              <option value="goalProgress">Goal Progress</option>
 
             </select>
+          </div>
 
-          </div>
-          <div class="row">
-            <button class="go" id="show_choice">Show Selection</button>
-          </div>
-          <div class="out" id="choice_output"></div>
+        <div id="graph_output">
+          <img src="images/SpendingbyCategory.png" id="spendingByCategory" class="graph" alt="Spending by Category" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
+          <img src="images/SpendingvBudget.png" id="budgetVsActual" class="graph" alt="Budget vs Actual" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
+          <img src="images/IncomevExpenses.png" id="incomeTrends" class="graph" alt="Income Trends" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
+          <img src="images/Spending.png" id="spendingBreakdown" class="graph" alt="Spending Breakdown" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
+          <img src="images/GoalProgress.png" id="goalProgress" class="graph" alt="Goal Progress" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
         </div>
       </section>
 
-      <!-- tab 6: todo -->
-      <section id="todo_tab" class="tab">
-        <h2>Tasks</h2>
-        <div class="todo">
-          <div class="todo-input-container">
-            <input id="todo_input" type="text" placeholder="Add a new task..." />
-            <button id="todo_add" class="add-btn">Add Task</button>
-          </div>
-          <ul id="todo_list" class="todo-list"></ul>
+      <!-- Reminders Tab (Minimal) -->
+      <section id="reminders_tab" class="tab" style="font-family:Arial, sans-serif; padding:16px;">
+        <h2>Reminders</h2>
+        <p>Track bills and payments.</p>
+
+        <form style="margin-bottom:16px;">
+          <label>
+            Reminder Name<br>
+            <input id="rName" type="text" placeholder="e.g., Rent" required>
+          </label><br><br>
+
+          <label>
+            Amount ($)<br>
+            <input id="amount" type="number" min="0" step="0.01" placeholder="0.00" required>
+          </label><br><br>
+
+          <label>
+            Due Date<br>
+            <input type="date" id="dueDate" required>
+          </label><br><br>
+
+          <label>
+            <input type="checkbox" id="recurring"> Recurring
+          </label><br><br>
+
+          <button
+            type="button"
+            style="background:#4a9d7c;color:#fff;border:none;padding:8px 16px;cursor:pointer;"
+            onclick="document.getElementById('list').innerHTML += '<p>' + document.getElementById('rName').value + ' • $' + document.getElementById('amount').value + ' • Due ' + document.getElementById('dueDate').value + ' • ' + (document.getElementById('recurring').checked ? 'Recurring' : 'One-time') + '</p>'">
+            Add Reminder
+          </button>
+        </form>
+
+        <h3>Upcoming Reminders</h3>
+        <div>
+          <p><strong>Phone Bill</strong><br>$65.00 • Due 10/15/2025 • Recurring</p>
+          <hr>
+          <p><strong>Car Insurance</strong><br>$120.00 • Due 11/01/2025 • One-time</p>
+          <hr>
+          <p><strong>Water Bill</strong><br>$40.00 • Due 11/10/2025 • Recurring</p>
         </div>
+
+        <div id="list">
+        </div>
+
       </section>
-    </div>
+
 
     <!-- Floating Action Button -->
     <button id="fab" aria-label="Add transaction">+</button>
@@ -546,12 +541,12 @@
         <span>Profile</span>
       </button>
       <button id="tab-choices" data-target="#choices_tab">
-        <i class="fi fi-rr-choose"></i>
-        <span>Choices</span>
+       <i class="fi fi-rr-display-chart-up"></i>
+        <span>Trends</span>
       </button>
-      <button id="tab-todo" data-target="#todo_tab">
+      <button id="tab-todo" data-target="#reminders_tab">
         <i class="fi fi-rr-task-checklist"></i>
-        <span>ToDo</span>
+        <span>Reminders</span>
       </button>
     </nav>
   </div>
