@@ -868,13 +868,6 @@ avatar.addEventListener("click", () => {
 closeNotification.addEventListener("click", () => {
   notification.style.display = "none";
 });
-// choices
-const out = document.getElementById('choice_output');
-document.getElementById('show_choice').addEventListener('click', () => {
-  const termLength = (document.querySelector('input[name="termLength"]:checked') || {}).value;
-  const expense = document.getElementById('expense').value;
-  out.textContent = `You chose: ${termLength} • ${expense}`;
-});
 
 // Function to render transactions grouped by category
 function renderDetailedTransactions(filterCategory = 'all') {
@@ -1187,3 +1180,19 @@ if (lrCancelBtn) {
     document.getElementById('lr_add_form').style.display = 'none';
   });
 }
+(function () {
+  const graphSelect = document.getElementById('graph_type');
+  const graphs = document.querySelectorAll('.graph');
+  if (!graphSelect || !graphs.length) return;
+
+  function showSelectedGraph() {
+    const selected = graphSelect.value;
+    graphs.forEach(img => {
+      img.style.display = (img.id === selected) ? 'block' : 'none';
+    });
+  }
+
+  showSelectedGraph();
+
+  graphSelect.addEventListener('change', showSelectedGraph);
+})();
