@@ -1,0 +1,47 @@
+<section id="home_tab" class="tab active">
+  <h2 style="display:none">Welcome</h2>
+
+  <section class="card budget-card" style="max-width:600px;margin:12px auto 16px;">
+    <div class="month">October Budget</div>
+    <div class="subtle">Remaining</div>
+    <div class="amount-remaining">$1,250.75</div>
+    <div class="row fineprint">
+      <span>Total Budget: $2,500.00</span>
+      <span>Spent So Far: $1,249.25</span>
+    </div>
+  </section>
+
+  <section class="card" style="max-width:600px;margin:0 auto 80px;">
+    <div class="section-title">Recent Activity</div>
+    <br>
+    <ul id="transactionsList" class="activity-list"></ul>
+  </section>
+
+  <button id="fab" aria-label="Add transaction">+</button>
+
+  <div id="quickAddModal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="addTxTitle">
+      <h3 id="addTxTitle">Add Transaction</h3>
+      <div class="type-select" style="display:flex;gap:16px;justify-content:center">
+        <label><input type="radio" name="txType" value="expense" checked> Expense</label>
+        <label><input type="radio" name="txType" value="income"> Income</label>
+      </div>
+      <input type="number" id="amountInput" placeholder="Amount" min="0" step="0.01" />
+      <input type="text" id="noteInput" placeholder="Merchant / Note (optional)" />
+      <select id="categoryInput">
+        <option value="" disabled selected>Select category</option>
+        <option>Groceries</option>
+        <option>Rent</option>
+        <option>Utilities</option>
+        <option>Transportation</option>
+        <option>Dining</option>
+        <option>Entertainment</option>
+        <option>Miscellaneous</option>
+      </select>
+      <div class="modal-actions">
+        <button id="saveTransaction" class="btn btn-primary">Save</button>
+        <button id="closeModal" class="btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+</section>

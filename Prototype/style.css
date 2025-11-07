@@ -53,7 +53,6 @@ body {
 
 .tab {
   display: none;
-  padding: 22px;
 }
 
 .tab.active {
@@ -83,28 +82,22 @@ h2 {
 }
 
 /*HOME SCREEN*/
-#fab{
-  position: absolute; /* positioned inside #app */
-  bottom: 96px;
-  left: 94%;
-  transform: translate(-50%, 0) scale(1);
+#fab {
+  position: absolute;           
   width: 60px;
+  margin-left: 17px;
   height: 60px;
   border: 0;
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
-  font-size: 36px; /* larger FAB */
-  display: grid;
-  place-items: center;
+  font-size: 36px;
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(74, 157, 124, 0.25);
-  z-index: 1100; /* above nav */
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 #fab:hover {
-  transform: translate(-50%, 0) scale(1.05);
+  transform: scale(1.05);
   box-shadow: 0 8px 24px rgba(74, 157, 124, 0.28);
 }
 
@@ -114,7 +107,7 @@ h2 {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  z-index: 1000;
+  z-index: 1500;
   align-items: center;
   justify-content: center;
 }
@@ -125,8 +118,8 @@ h2 {
   background: var(--panel);
   color: var(--text);
   width: 94vw;
-  max-width: 300px;
-  max-height: 80vh;
+  max-width: 550px;
+  max-height: 60vh;
   overflow-y: auto;
   border-radius: 12px;
   padding: 18px;
@@ -157,6 +150,8 @@ h2 {
   gap: 8px;
   justify-content: flex-end;
 }
+
+
 .btn {
   padding: 10px 16px;
   border-radius: 10px;
@@ -440,6 +435,7 @@ h2 {
   color: var(--text);
   text-align: center;
   padding: 28px;
+  margin-top: 0;
   border-radius: 18px;
   max-width: 640px;
   margin: 20px auto;
@@ -501,11 +497,6 @@ h2 {
   gap: 16px;
 }
 
-.transaction-actions {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-}
 
 .action-btn {
   padding: 12px 20px;
@@ -534,12 +525,7 @@ h2 {
   color: white;
 }
 
-.action-btn:hover {
-    width: 98vw;
-    max-width: 340px;
-    max-height: 80vh;
-    overflow-y: auto;
-}
+
 
 .category-filter {
   width: 100%;
@@ -608,55 +594,15 @@ h2 {
 }
 
 .edit-transaction-btn {
-  opacity: 0;
   position: absolute;
-  right: 85px;
+  right: 90px;
   background: none;
   border: none;
   cursor: pointer;
   padding: 4px 8px;
   color: var(--muted);
-  transition: opacity 0.2s ease-in-out;
   display: flex;
   align-items: center;
-}
-
-.transaction-item:hover .edit-transaction-btn {
-  opacity: 1;
-}
-
-.edit-transaction-btn:hover {
-  color: var(--accent);
-}
-
-.edit-transaction-btn i {
-  font-size: 16px;
-}
-
-/* Modal styles */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal.show {
-  display: flex;
-}
-
-.modal-content {
-  /* ...existing code... */
-}
-
-.modal-content.wide-modal {
-  max-width: 800px;
 }
 
 .form-grid {
@@ -1186,7 +1132,6 @@ h2 {
   text-align: right;
 }
 
-
 /*close*/
 .notification_box button {
   padding: 8px 14px;
@@ -1224,69 +1169,17 @@ h2 {
   color: var(--mint);
 }
 
-/* to do */
-#todo_tab input {
-  width: 70%;
-  padding: 8px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--text);
-}
-
-#todo_tab .add {
-  padding: 8px 12px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-}
-
-#todo_tab ul {
-  list-style: none;
-  margin-top: 10px;
-}
-
-#todo_tab li {
-  background: var(--panel);
-  margin-bottom: 8px;
-  padding: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#todo_tab li.done .txt {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-#todo_tab .actions button {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  cursor: pointer;
-  border-radius: 6px;
-  margin-left: 8px;
-  font-size: 14px;
-  transition: opacity 0.2s ease;
-}
-
-#todo_tab .actions button:hover {
-  opacity: 0.9;
-}
-
-#todo_tab .actions button.delete-btn {
-  background: var(--bad);
-}
-
 /* nav bar */
 #navigationBar{
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   bottom: 0;
   width: min(640px, 100%);
+
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+
   background: var(--nav-bg);
   display: flex;
   justify-content: center;
@@ -1299,7 +1192,6 @@ h2 {
   gap: 0;
 }
 
-/* give content room so nav doesn't cover it */
 #content{ padding-bottom: calc(var(--nav-height) + 56px); }
 
 #navigationBar button {

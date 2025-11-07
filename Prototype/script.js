@@ -455,7 +455,6 @@ saveTransaction.onclick = () => {
     date: new Date().toISOString(),
     recurring: document.getElementById('recurringInput')?.value || 'no',
     goalAllocation: document.getElementById('goalAllocationInput')?.value || '',
-    priority: document.getElementById('priorityInput')?.value || 'optional'
   };
 
   // Initialize tx array if it's not already an array
@@ -502,7 +501,6 @@ saveTransaction.onclick = () => {
   document.getElementById('merchantInput').value = '';
   document.getElementById('recurringInput').value = 'no';
   document.getElementById('goalAllocationInput').value = '';
-  document.getElementById('priorityInput').value = 'optional';
 
   // Close modal, refresh UI
   document.getElementById('quickAddModal')?.classList.remove('show');
@@ -1016,7 +1014,6 @@ function openEditModal(transaction) {
   const editCategoryInput = document.getElementById('editCategoryInput');
   const editRecurringInput = document.getElementById('editRecurringInput');
   const editGoalAllocationInput = document.getElementById('editGoalAllocationInput');
-  const editPriorityInput = document.getElementById('editPriorityInput');
   const editTransactionId = document.getElementById('editTransactionId');
   const editTypeInputs = document.getElementsByName('editTxType');
 
@@ -1030,7 +1027,6 @@ function openEditModal(transaction) {
   // Set advanced fields
   editRecurringInput.value = transaction.recurring || 'no';
   editGoalAllocationInput.value = transaction.goalAllocation || '';
-  editPriorityInput.value = transaction.priority || 'optional';
   
   // Set transaction type radio button
   editTypeInputs.forEach(input => {
@@ -1124,51 +1120,6 @@ document.addEventListener('DOMContentLoaded', () => {
       renderDetailedTransactions(e.target.value);
     });
   }
-
-  // Transaction page Add Expense / Add Income buttons
-  const addExpenseBtn = document.getElementById('addExpenseBtn');
-  if (addExpenseBtn) {
-    addExpenseBtn.addEventListener('click', () => {
-      // Show inline LR form and prefill type
-      const lrForm = document.getElementById('lr_add_form');
-      if (!lrForm) return;
-      // Reset fields
-      document.getElementById('lr_amountInput').value = '';
-      document.getElementById('lr_merchantInput').value = '';
-      document.getElementById('lr_noteInput').value = '';
-      document.getElementById('lr_categoryInput').selectedIndex = 0;
-      document.getElementById('lr_recurringInput').value = 'no';
-      document.getElementById('lr_priorityInput').value = 'optional';
-      // set type
-      const lrType = document.querySelector('input[name="lr_txType"][value="expense"]');
-      if (lrType) lrType.checked = true;
-      // populate goals
-      updateGoalOptions();
-      // show
-      lrForm.style.display = 'block';
-      // focus amount
-      document.getElementById('lr_amountInput')?.focus();
-    });
-  }
-
-  const addIncomeBtn = document.getElementById('addIncomeBtn');
-  if (addIncomeBtn) {
-    addIncomeBtn.addEventListener('click', () => {
-      const lrForm = document.getElementById('lr_add_form');
-      if (!lrForm) return;
-      document.getElementById('lr_amountInput').value = '';
-      document.getElementById('lr_merchantInput').value = '';
-      document.getElementById('lr_noteInput').value = '';
-      document.getElementById('lr_categoryInput').selectedIndex = 0;
-      document.getElementById('lr_recurringInput').value = 'no';
-      document.getElementById('lr_priorityInput').value = 'optional';
-      const lrType = document.querySelector('input[name="lr_txType"][value="income"]');
-      if (lrType) lrType.checked = true;
-      updateGoalOptions();
-      lrForm.style.display = 'block';
-      document.getElementById('lr_amountInput')?.focus();
-    });
-  }
 });
 
 // LR inline form handlers
@@ -1183,7 +1134,7 @@ if (lrSaveBtn) {
     const note = document.getElementById('lr_noteInput')?.value || '';
     const recurring = document.getElementById('lr_recurringInput')?.value || 'no';
     const goalAllocation = document.getElementById('lr_goalAllocationInput')?.value || '';
-    const priority = document.getElementById('lr_priorityInput')?.value || 'optional';
+
     const type = (document.querySelector('input[name="lr_txType"]:checked') || {}).value || 'expense';
 
     if (isNaN(amount) || amount <= 0) {
@@ -1205,7 +1156,6 @@ if (lrSaveBtn) {
       date: new Date().toISOString(),
       recurring,
       goalAllocation,
-      priority
     };
 
     // Push and save
@@ -1237,120 +1187,3 @@ if (lrCancelBtn) {
     document.getElementById('lr_add_form').style.display = 'none';
   });
 }
-
-// Todo functionality
-let todoList = {
-    todos: [],
-    list: null,
-    input: null,
-    addBtn: null,
-
-    init() {
-        // Get DOM elements
-        this.list = document.getElementById('todo_list');
-        this.input = document.getElementById('todo_input');
-        this.addBtn = document.getElementById('todo_add');
-        
-        // Load saved todos
-        this.todos = JSON.parse(localStorage.getItem('todos') || '[]');
-        
-        // Bind event listeners
-        this.bindEvents();
-        
-        // Initial render
-        this.render();
-    },
-
-    bindEvents() {
-        if (this.addBtn) {
-            this.addBtn.addEventListener('click', () => this.addItem());
-        }
-        
-        if (this.input) {
-            this.input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.addItem();
-                }
-            });
-        }
-    },
-
-    addItem() {
-        const text = this.input?.value.trim();
-        if (!text) return;
-
-        this.todos.push({
-            id: Date.now(),
-            text: text,
-            done: false
-        });
-
-        if (this.input) this.input.value = '';
-        this.save();
-        this.render();
-    },
-
-    toggleTodo(index) {
-        if (this.todos[index]) {
-            this.todos[index].done = !this.todos[index].done;
-            this.save();
-            this.render();
-        }
-    },
-
-    deleteTodo(index) {
-        this.todos.splice(index, 1);
-        this.save();
-        this.render();
-    },
-
-    save() {
-        localStorage.setItem('todos', JSON.stringify(this.todos));
-    },
-
-    render() {
-        if (!this.list) return;
-        
-        this.list.innerHTML = '';
-        this.todos.forEach((todo, index) => {
-            const li = document.createElement('li');
-            if (todo.done) li.classList.add('done');
-            
-            const span = document.createElement('span');
-            span.className = 'txt';
-            span.textContent = todo.text;
-
-            const actions = document.createElement('div');
-            actions.className = 'actions';
-
-            const done = document.createElement('button');
-            done.textContent = todo.done ? 'Undo' : 'Done';
-            done.className = todo.done ? 'undo-btn' : 'done-btn';
-            
-            const del = document.createElement('button');
-            del.textContent = 'Delete';
-            del.className = 'delete-btn';
-
-            done.onclick = () => this.toggleTodo(index);
-            del.onclick = () => this.deleteTodo(index);
-
-            actions.appendChild(done);
-            actions.appendChild(del);
-            li.appendChild(span);
-            li.appendChild(actions);
-            this.list.appendChild(li);
-        });
-    }
-};
-
-// Initialize todo list when the todo tab is shown
-document.getElementById('tab-todo')?.addEventListener('click', () => {
-    todoList.init();
-});
-
-// Initialize if we start on the todo tab
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.querySelector('#todo_tab.active')) {
-        todoList.init();
-    }
-});
