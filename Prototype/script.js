@@ -67,6 +67,8 @@ function updateBudgetDisplays() {
     const profileSpentBudget = document.getElementById('profileSpentValue') || document.querySelectorAll('#profile_tab .budget-item-value')[1]
     if (profileSpentBudget) profileSpentBudget.textContent = `$${spentExcluding.toFixed(2)}`
   }
+
+  updateBudgetBreakdownDetails();
 }
 
 // Compute totals, allocated amount and spent excluding allocations
@@ -96,6 +98,222 @@ function computeBudgetTotals() {
   };
 }
 
+const defaultCategories = [
+  'Groceries',
+  'Rent',
+  'Utilities',
+  'Transportation',
+  'Dining',
+  'Entertainment',
+  'Miscellaneous'
+];
+
+let categories;
+try {
+  const storedCategories = JSON.parse(localStorage.getItem('categories'));
+  categories = Array.isArray(storedCategories) && storedCategories.length ? storedCategories : [...defaultCategories];
+} catch (e) {
+  console.error('Failed to load categories from storage, using defaults.', e);
+  categories = [...defaultCategories];
+}
+
+let categoryMetadata = {};
+try {
+  const storedMetadata = JSON.parse(localStorage.getItem('categoryMetadata'));
+  categoryMetadata = storedMetadata && typeof storedMetadata === 'object' ? storedMetadata : {};
+} catch (error) {
+  categoryMetadata = {};
+}
+
+function saveCategories() {
+  try {
+    localStorage.setItem('categories', JSON.stringify(categories));
+  } catch (error) {
+    console.error('Unable to save categories:', error);
+  }
+}
+
+function saveCategoryMetadata() {
+  try {
+    localStorage.setItem('categoryMetadata', JSON.stringify(categoryMetadata));
+  } catch (error) {
+    console.error('Unable to save category metadata:', error);
+  }
+}
+
+function normalizeCategoryName(name) {
+  if (!name) return '';
+  return name
+    .trim()
+    .replace(/\s+/g, ' ')
+    .split(' ')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function refreshCategorySelects(preferredSelection = null) {
+  const selectConfigs = [
+    { element: document.getElementById('categoryInput'), placeholder: document.getElementById('categoryInput')?.dataset.placeholder || 'Select category' },
+    { element: document.getElementById('editCategoryInput'), placeholder: 'Select category' },
+    { element: document.getElementById('lr_categoryInput'), placeholder: 'Select category' }
+  ];
+
+  selectConfigs.forEach(({ element, placeholder }) => {
+    if (!element) return;
+
+    const currentValue = preferredSelection || element.value;
+    element.innerHTML = '';
+
+    const placeholderOption = document.createElement('option');
+    placeholderOption.value = '';
+    placeholderOption.disabled = true;
+    placeholderOption.textContent = placeholder;
+    if (!currentValue) placeholderOption.selected = true;
+    element.appendChild(placeholderOption);
+
+    categories.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category;
+      const purpose = categoryMetadata[category]?.purpose;
+      if (purpose) option.title = purpose;
+      element.appendChild(option);
+    });
+
+    if (currentValue && categories.includes(currentValue)) {
+      element.value = currentValue;
+    }
+  });
+
+  updateCategoryFilterOptions(document.getElementById('categoryFilter')?.value || 'all');
+  renderCustomCategoryList();
+}
+
+function renderCustomCategoryList() {
+  const list = document.getElementById('customCategoriesList');
+  if (!list) return;
+
+  list.innerHTML = '';
+  const customCategories = categories.filter(cat => !defaultCategories.includes(cat));
+
+  if (!customCategories.length) {
+    const li = document.createElement('li');
+    li.className = 'custom-category-empty';
+    li.textContent = 'You have not added any custom categories yet.';
+    list.appendChild(li);
+    return;
+  }
+
+  customCategories.forEach(category => {
+    const li = document.createElement('li');
+    li.className = 'custom-category-pill';
+    const purpose = categoryMetadata[category]?.purpose;
+    li.innerHTML = `
+      <strong>${category}</strong>
+      ${purpose ? `<span>${purpose}</span>` : ''}
+    `;
+    list.appendChild(li);
+  });
+}
+
+function updateCategoryFilterOptions(selectedValue = 'all') {
+  const filterDropdown = document.getElementById('categoryFilter');
+  if (!filterDropdown) return;
+
+  const transactionCategories = Array.from(new Set(
+    (Array.isArray(tx) ? tx : [])
+      .map(t => (t && t.cat) ? t.cat : null)
+      .filter(Boolean)
+  ));
+
+  const combined = Array.from(new Set(['all', ...categories, ...transactionCategories]));
+  filterDropdown.innerHTML = '';
+
+  combined.forEach(category => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category === 'all' ? 'All Categories' : category;
+    filterDropdown.appendChild(option);
+  });
+
+  filterDropdown.value = combined.includes(selectedValue) ? selectedValue : 'all';
+}
+
+refreshCategorySelects();
+
+const createCategoryModal = document.getElementById('createCategoryModal');
+const closeCategoryModalBtn = document.getElementById('closeCategoryModal');
+const saveCategoryBtn = document.getElementById('saveCategory');
+const manageCategoriesBtn = document.getElementById('manageCategoriesBtn');
+let pendingCategorySelectId = null;
+
+function openCreateCategoryModal(selectId = null) {
+  pendingCategorySelectId = selectId;
+  if (createCategoryModal) {
+    const nameInput = document.getElementById('newCategoryName');
+    const purposeInput = document.getElementById('categoryPurpose');
+    if (nameInput) nameInput.value = '';
+    if (purposeInput) purposeInput.value = '';
+    createCategoryModal.classList.add('show');
+    nameInput?.focus();
+  }
+}
+
+function closeCreateCategoryModal() {
+  createCategoryModal?.classList.remove('show');
+  pendingCategorySelectId = null;
+}
+
+manageCategoriesBtn?.addEventListener('click', () => openCreateCategoryModal());
+closeCategoryModalBtn?.addEventListener('click', closeCreateCategoryModal);
+createCategoryModal?.addEventListener('click', (event) => {
+  if (event.target === createCategoryModal) closeCreateCategoryModal();
+});
+
+saveCategoryBtn?.addEventListener('click', () => {
+  const nameInput = document.getElementById('newCategoryName');
+  if (!nameInput) return;
+
+  const normalizedName = normalizeCategoryName(nameInput.value);
+  const purposeInput = document.getElementById('categoryPurpose');
+  const purposeValue = purposeInput?.value.trim() || '';
+  if (!normalizedName) {
+    alert('Please enter a category name.');
+    nameInput.focus();
+    return;
+  }
+
+  const exists = categories.some(cat => cat.toLowerCase() === normalizedName.toLowerCase());
+  if (exists) {
+    if (purposeValue) {
+      categoryMetadata[normalizedName] = { purpose: purposeValue };
+      saveCategoryMetadata();
+      refreshCategorySelects(normalizedName);
+    }
+    alert('This category already exists.');
+    if (pendingCategorySelectId) {
+      const existingSelect = document.getElementById(pendingCategorySelectId);
+      if (existingSelect) existingSelect.value = normalizedName;
+    }
+    closeCreateCategoryModal();
+    return;
+  }
+
+  categories.push(normalizedName);
+  categories.sort((a, b) => a.localeCompare(b));
+  categoryMetadata[normalizedName] = { purpose: purposeValue };
+  saveCategories();
+  saveCategoryMetadata();
+  refreshCategorySelects(normalizedName);
+
+  if (pendingCategorySelectId) {
+    const targetSelect = document.getElementById(pendingCategorySelectId);
+    if (targetSelect) targetSelect.value = normalizedName;
+  }
+
+  closeCreateCategoryModal();
+});
+
 // Recalculate budget.remaining using totals and persist
 function recalcAndSaveBudget() {
   const { totalExpenses, totalIncome, allocatedToGoals } = computeBudgetTotals();
@@ -104,6 +322,101 @@ function recalcAndSaveBudget() {
   try { localStorage.setItem('budget', JSON.stringify(budget)); } catch (e) { console.error('Failed to save budget:', e); }
   return computeBudgetTotals();
 }
+
+const budgetBreakdownModal = document.getElementById('budgetBreakdownModal');
+const closeBreakdownModalBtn = document.getElementById('closeBreakdownModal');
+const breakdownCategoryList = document.getElementById('breakdownCategoryList');
+const remainingAmountButton = document.getElementById('remainingAmount');
+
+function formatCurrency(value = 0) {
+  const amount = Number(value) || 0;
+  return `$${amount.toFixed(2)}`;
+}
+
+function updateBudgetBreakdownDetails() {
+  if (!budgetBreakdownModal) return;
+
+  const { totalExpenses, totalIncome, allocatedToGoals, spentExcludingAllocations } = computeBudgetTotals();
+  const remaining = budget?.remaining || 0;
+
+  const mapping = [
+    ['breakdownTotalBudget', budget?.total || 0],
+    ['breakdownRemaining', remaining],
+    ['breakdownSpent', spentExcludingAllocations],
+    ['breakdownAllocated', allocatedToGoals],
+    ['breakdownIncome', totalIncome],
+    ['breakdownNet', totalIncome - totalExpenses]
+  ];
+
+  mapping.forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = formatCurrency(value);
+  });
+
+  const utilization = budget?.total ? Math.min(100, Math.max(0, (spentExcludingAllocations / budget.total) * 100)) : 0;
+  const progressFill = document.getElementById('breakdownProgressFill');
+  if (progressFill) progressFill.style.width = `${utilization}%`;
+  const progressLabel = document.getElementById('breakdownProgressLabel');
+  if (progressLabel) progressLabel.textContent = `${utilization.toFixed(0)}% used`;
+
+  const categoryTotals = (Array.isArray(tx) ? tx : []).reduce((acc, transaction) => {
+    if (!transaction || transaction.type !== 'expense') return acc;
+    const categoryKey = transaction.cat || 'Uncategorized';
+    acc[categoryKey] = (acc[categoryKey] || 0) + (Number(transaction.amt) || 0);
+    return acc;
+  }, {});
+
+  if (breakdownCategoryList) {
+    breakdownCategoryList.innerHTML = '';
+    const sorted = Object.entries(categoryTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    if (!sorted.length) {
+      const li = document.createElement('li');
+      li.className = 'empty-row';
+      li.textContent = 'No expenses recorded yet.';
+      breakdownCategoryList.appendChild(li);
+    } else {
+      sorted.forEach(([category, amount]) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${category}</span><span class="amount expense">-$${(amount || 0).toFixed(2)}</span>`;
+        breakdownCategoryList.appendChild(li);
+      });
+    }
+
+    const hint = document.getElementById('breakdownCategoryHint');
+    if (hint) {
+      const totalCategoryCount = Object.keys(categoryTotals).length;
+      hint.textContent = totalCategoryCount
+        ? `Showing ${Math.min(sorted.length, totalCategoryCount)} of ${totalCategoryCount} categories`
+        : 'No spending yet';
+    }
+  }
+}
+
+function openBudgetBreakdownModal() {
+  updateBudgetBreakdownDetails();
+  budgetBreakdownModal?.classList.add('show');
+}
+
+function closeBudgetBreakdownModal() {
+  budgetBreakdownModal?.classList.remove('show');
+  document.getElementById('tab-text')?.click();
+}
+
+remainingAmountButton?.addEventListener('click', openBudgetBreakdownModal);
+remainingAmountButton?.addEventListener('keypress', (event) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    openBudgetBreakdownModal();
+  }
+});
+closeBreakdownModalBtn?.addEventListener('click', closeBudgetBreakdownModal);
+budgetBreakdownModal?.addEventListener('click', (event) => {
+  if (event.target === budgetBreakdownModal) closeBudgetBreakdownModal();
+});
+
 
 fab.onclick = () => quickAddModal.classList.add('show')
 closeModal.onclick = () => quickAddModal.classList.remove('show')
@@ -181,7 +494,11 @@ saveTransaction.onclick = () => {
   // Clear form
   amountInput.value = '';
   if (noteInput) noteInput.value = '';
-  categoryInput.value = '';
+  if (categoryInput.options.length) {
+    categoryInput.selectedIndex = 0;
+  } else {
+    categoryInput.value = '';
+  }
   document.getElementById('merchantInput').value = '';
   document.getElementById('recurringInput').value = 'no';
   document.getElementById('goalAllocationInput').value = '';
@@ -245,7 +562,8 @@ function render(){
   }
 
   // Render detailed transactions view
-  renderDetailedTransactions();
+  const currentFilter = document.getElementById('categoryFilter')?.value || 'all';
+  renderDetailedTransactions(currentFilter);
 }
 
 // Goal Management
@@ -430,73 +748,105 @@ function updateGoalOptions(selectElement = null) {
 }
 
 function updateGoalDisplays() {
-  // Update goals list
-  const goalsContainer = document.querySelector('.goals-list');
-  if (!goalsContainer) return;
-
-  goalsContainer.innerHTML = '';
-  
-  goals.forEach(goal => {
-    const progress = (goal.currentAmount / goal.targetAmount) * 100;
-    const progressClamped = Math.min(Math.max(progress, 0), 100);
-    
-    const daysLeft = goal.deadline ? 
-      Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-    
-    const goalElement = document.createElement('div');
-    goalElement.className = 'goal-item';
-    goalElement.innerHTML = `
-      <div class="goal-header">
-        <div class="goal-info">
-          <div class="goal-name">${goal.name}</div>
-          <div class="goal-category">${goal.category}</div>
-        </div>
-        <div class="goal-actions">
-          <button class="goal-action-btn" onclick="openGoalModal(${JSON.stringify(goal).replace(/'/g, "&apos;")})">
-            <i class="fi fi-rr-edit"></i>
-          </button>
-          <button class="goal-action-btn" onclick="deleteGoal(${goal.id})">
-            <i class="fi fi-rr-trash"></i>
-          </button>
-        </div>
-      </div>
-      
-      <div class="goal-progress-info">
-        <div class="goal-amount">$${goal.currentAmount.toFixed(2)} / $${goal.targetAmount.toFixed(2)}</div>
-        ${goal.deadline ? `<div class="goal-deadline">${daysLeft} days left</div>` : ''}
-      </div>
-      
-      <div class="goal-progress-bar">
-        <div class="goal-progress" style="width: ${progressClamped}%"></div>
-      </div>
-      
-      <div class="goal-footer">
-        <div class="goal-percentage">${progress.toFixed(1)}% Complete</div>
-        <div class="goal-stats">
-          <div class="goal-stat">
-            <i class="fi fi-rr-arrow-up"></i>
-            <span class="goal-stat-value">$${(goal.targetAmount - goal.currentAmount).toFixed(2)} to go</span>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    goalsContainer.appendChild(goalElement);
-  });
-
-  // Update summary cards
   const totalGoals = goals.length;
-  const averageProgress = goals.length ? 
+  const averageProgress = goals.length ?
     goals.reduce((sum, goal) => sum + (goal.currentAmount / goal.targetAmount * 100), 0) / goals.length :
     0;
   const totalSaved = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
 
-  document.getElementById('totalGoalsCount').textContent = totalGoals;
-  document.getElementById('averageProgress').textContent = `${averageProgress.toFixed(1)}%`;
-  document.getElementById('totalSaved').textContent = `$${totalSaved.toFixed(2)}`;
-
-  // Update goal options in transaction forms
   updateGoalOptions();
+  renderProfileGoalsMirror({ totalGoals, averageProgress, totalSaved });
+}
+
+function renderProfileGoalsMirror(stats) {
+  const mirror = document.getElementById('profileGoalsMirror');
+  if (!mirror) return;
+
+  const header = `
+    <div class="mirror-header">
+      <div>
+        <h3>Goals</h3>
+        <p>Track your goals without leaving your profile.</p>
+      </div>
+    </div>
+  `;
+
+  if (!goals.length) {
+    mirror.innerHTML = `
+      ${header}
+      <p style="margin-top:16px;color:var(--muted);">No goals yet. Tap “Add Goal” above to get started.</p>
+    `;
+    return;
+  }
+
+  const goalsMarkup = goals.map(goal => {
+    const progress = (goal.currentAmount / goal.targetAmount) * 100;
+    const progressClamped = Math.min(Math.max(progress, 0), 100);
+    const daysLeft = goal.deadline ?
+      `${Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24))} days left` :
+      '';
+
+    return `
+      <div class="goal-item">
+        <div class="goal-header">
+          <div class="goal-info">
+            <div class="goal-name">${goal.name}</div>
+            <div class="goal-category">${goal.category}</div>
+          </div>
+          ${daysLeft ? `<div class="goal-deadline">${daysLeft}</div>` : ''}
+        </div>
+        <div class="goal-progress-info">
+          <div class="goal-amount">$${goal.currentAmount.toFixed(2)} / $${goal.targetAmount.toFixed(2)}</div>
+        </div>
+        <div class="goal-progress-bar">
+          <div class="goal-progress" style="width:${progressClamped}%"></div>
+        </div>
+        <div class="goal-footer">
+          <div class="goal-percentage">${progress.toFixed(1)}% Complete</div>
+          <div class="goal-stats">
+            <div class="goal-stat">
+              <i class="fi fi-rr-arrow-up"></i>
+              <span class="goal-stat-value">$${(goal.targetAmount - goal.currentAmount).toFixed(2)} to go</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  mirror.innerHTML = `
+    ${header}
+    <div class="goals-overview">
+      <div class="summary-card total-goals">
+        <i class="fi fi-rr-target"></i>
+        <div class="summary-content">
+          <div class="summary-label">Active Goals</div>
+          <div class="summary-value">${stats.totalGoals}</div>
+        </div>
+      </div>
+      <div class="summary-card total-progress">
+        <i class="fi fi-rr-chart-line-up"></i>
+        <div class="summary-content">
+          <div class="summary-label">Average Progress</div>
+          <div class="summary-value">${stats.averageProgress.toFixed(1)}%</div>
+        </div>
+      </div>
+      <div class="summary-card total-saved">
+        <svg class="summary-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="6" width="22" height="12" rx="2" ry="2" fill="currentColor" opacity="0.08"/>
+          <rect x="3" y="8" width="18" height="8" rx="1" ry="1" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <text x="12" y="13.2" text-anchor="middle" font-size="9" fill="currentColor" font-family="Arial, Helvetica, sans-serif" font-weight="700">$</text>
+        </svg>
+        <div class="summary-content">
+          <div class="summary-label">Total Saved</div>
+          <div class="summary-value">$${stats.totalSaved.toFixed(2)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="goals-list mirror-list">
+      ${goalsMarkup}
+    </div>
+  `;
 }
 
 // Initial render and budget update
@@ -534,6 +884,10 @@ function renderDetailedTransactions(filterCategory = 'all') {
   if (!container) return;
 
   container.innerHTML = '';
+  if (!Array.isArray(tx)) return;
+
+  const activeFilter = filterCategory || 'all';
+  updateCategoryFilterOptions(activeFilter);
   
   // Group transactions by category
   const groupedTransactions = {};
@@ -542,7 +896,7 @@ function renderDetailedTransactions(filterCategory = 'all') {
   tx.forEach(t => {
     if (!t || typeof t !== 'object') return;
     
-    if (filterCategory === 'all' || t.cat === filterCategory) {
+    if (activeFilter === 'all' || t.cat === activeFilter) {
       const category = t.cat || 'Uncategorized';
       if (!groupedTransactions[category]) {
         groupedTransactions[category] = [];
@@ -559,22 +913,6 @@ function renderDetailedTransactions(filterCategory = 'all') {
 
   // Sort categories alphabetically
   const sortedCategories = Object.keys(groupedTransactions).sort();
-  
-  // Handle category filter dropdown
-  const filterDropdown = document.getElementById('categoryFilter');
-  if (filterDropdown && !filterDropdown.hasChildNodes()) {
-    const allOption = document.createElement('option');
-    allOption.value = 'all';
-    allOption.textContent = 'All Categories';
-    filterDropdown.appendChild(allOption);
-    
-    sortedCategories.forEach(category => {
-      const option = document.createElement('option');
-      option.value = category;
-      option.textContent = category;
-      filterDropdown.appendChild(option);
-    });
-  }
 
   // Render each category group
   sortedCategories.forEach(category => {
@@ -884,6 +1222,10 @@ if (lrSaveBtn) {
     } catch (e) { console.error(e); }
 
     // Close and refresh
+    const lrCategorySelect = document.getElementById('lr_categoryInput');
+    if (lrCategorySelect && lrCategorySelect.options.length) {
+      lrCategorySelect.selectedIndex = 0;
+    }
     document.getElementById('lr_add_form').style.display = 'none';
     updateBudgetDisplays();
     updateGoalDisplays();
