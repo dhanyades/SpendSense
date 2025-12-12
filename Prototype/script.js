@@ -1,79 +1,62 @@
-// tabs
 const tabs = Array.from(document.querySelectorAll('#navigationBar button'));
 const pages = Array.from(document.querySelectorAll('.tab'));
 
-tabs.forEach(b => b.addEventListener('click', () => {
-  tabs.forEach(t => t.classList.remove('active'));
-  pages.forEach(p => p.classList.remove('active'));
-  b.classList.add('active');
-  const target = document.querySelector(b.dataset.target);
-  if (target) target.classList.add('active');
-}));
+tabs.forEach(button => {
+  button.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    pages.forEach(p => p.classList.remove('active'));
+    button.classList.add('active');
+    const target = document.querySelector(button.dataset.target);
+    if (target) target.classList.add('active');
+  });
+});
 
-
-//welcome page
 let tx = [];
 const budget = { total: 0, remaining: 0 };
 
-// Update budget displays
-function updateBudgetDisplays() {
-  const totals = computeBudgetTotals();
-
-  const remainingEl = document.querySelector('.amount-remaining');
-  if (remainingEl) remainingEl.textContent = `$${budget.remaining.toFixed(2)}`;
-  const totalLabel = document.getElementById('totalBudgetLabel');
-  if (totalLabel) totalLabel.textContent = `Total Budget: $${budget.total.toFixed(2)}`;
-
-  // Use computed totals so 'Spent So Far' excludes allocations and we show allocated separately
-  const allocated = totals.allocatedToGoals || 0;
-  const spentExcluding = totals.spentExcludingAllocations || 0;
-
-  const allocatedLabel = document.getElementById('allocatedToGoalsLabel');
-  if (allocatedLabel) allocatedLabel.textContent = `Allocated to Goals: $${allocated.toFixed(2)}`;
-
-  const spentLabel = document.getElementById('spentSoFarLabel');
-  if (spentLabel) spentLabel.textContent = `Spent So Far: $${spentExcluding.toFixed(2)}`;
-
-  // Update profile page budget if it exists
-  const profileBudget = document.querySelector('#profile_tab .budget-amount')
-  if (profileBudget) {
-    profileBudget.textContent = `$${budget.remaining.toFixed(2)}`
-    const profileTotalBudget = document.getElementById('profileTotalBudgetValue') || document.querySelector('#profile_tab .budget-item-value')
-    if (profileTotalBudget) profileTotalBudget.textContent = `$${budget.total.toFixed(2)}`
-    const profileAllocated = document.getElementById('profileAllocatedValue')
-    if (profileAllocated) profileAllocated.textContent = `$${allocated.toFixed(2)}`
-    const profileSpentBudget = document.getElementById('profileSpentValue') || document.querySelectorAll('#profile_tab .budget-item-value')[1]
-    if (profileSpentBudget) profileSpentBudget.textContent = `$${spentExcluding.toFixed(2)}`
-  }
-
-  updateBudgetBreakdownDetails();
-}
-
-// Compute totals, allocated amount and spent excluding allocations
 function computeBudgetTotals() {
   const totals = (Array.isArray(tx) ? tx : []).reduce((acc, t) => {
     if (!t || typeof t !== 'object') return acc;
+    const amt = Number(t.amt) || 0;
     if (t.type === 'expense') {
-      acc.totalExpenses += Number(t.amt) || 0;
-      // Only count allocations for expense transactions to avoid double-counting incomes
-      if (t.goalAllocation) acc.allocatedToGoals += Number(t.amt) || 0;
+      acc.totalExpenses += amt;
+      if (t.goalAllocation) acc.allocatedToGoals += amt;
     }
     if (t.type === 'income') {
-      acc.totalIncome += Number(t.amt) || 0;
-      // do not add income allocations to allocatedToGoals here
+      acc.totalIncome += amt;
     }
     return acc;
   }, { totalExpenses: 0, totalIncome: 0, allocatedToGoals: 0 });
-
-  // Spent so far should exclude amounts allocated to goals
   const spentExcludingAllocations = Math.max(0, totals.totalExpenses - totals.allocatedToGoals);
-
   return {
     totalExpenses: totals.totalExpenses,
     totalIncome: totals.totalIncome,
     allocatedToGoals: totals.allocatedToGoals,
     spentExcludingAllocations
   };
+}
+
+function formatCurrency(value) {
+  const amount = Number(value) || 0;
+  return `$${amount.toFixed(2)}`;
+}
+
+function recalcAndSaveBudget() {
+  const totals = computeBudgetTotals();
+  budget.total = totals.totalIncome;
+  budget.remaining = Math.max(0, totals.totalIncome - totals.totalExpenses);
+  return totals;
+}
+
+function updateBudgetDisplays() {
+  const totals = computeBudgetTotals();
+  const remainingEl = document.querySelector('.main-budget-card .amount-remaining');
+  if (remainingEl) remainingEl.textContent = formatCurrency(budget.remaining);
+  const totalLabel = document.getElementById('totalBudgetLabel');
+  if (totalLabel) totalLabel.textContent = `Total Budget: ${formatCurrency(budget.total)}`;
+  const spentLabel = document.getElementById('spentSoFarLabel');
+  if (spentLabel) spentLabel.textContent = `Spent So Far: ${formatCurrency(totals.spentExcludingAllocations)}`;
+  updateBudgetBreakdownDetails();
 }
 
 const defaultCategories = [
@@ -83,7 +66,12 @@ const defaultCategories = [
   'Transportation',
   'Dining',
   'Entertainment',
-  'Miscellaneous'
+  'Miscellaneous',
+  'Salary',
+  'Freelance',
+  'Investment',
+  'Gift',
+  'Bonus'
 ];
 
 let categories = [...defaultCategories];
@@ -102,26 +90,141 @@ function normalizeCategoryName(name) {
     .join(' ');
 }
 
+function updateCategoryFilterOptions(selectedValue = 'all') {
+  const filterDropdown = document.getElementById('categoryFilter');
+  if (!filterDropdown) return;
+  const transactionCategories = Array.from(new Set(
+    (Array.isArray(tx) ? tx : [])
+      .map(t => (t && t.cat) ? t.cat : null)
+      .filter(Boolean)
+  ));
+  const combined = Array.from(new Set(['all', ...categories, ...transactionCategories]));
+  filterDropdown.innerHTML = '';
+  combined.forEach(category => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category === 'all' ? 'All Categories' : category;
+    filterDropdown.appendChild(option);
+  });
+  filterDropdown.value = combined.includes(selectedValue) ? selectedValue : 'all';
+}
+
+function renderCustomCategoryList() {
+  const list = document.getElementById('customCategoriesList');
+  if (!list) return;
+  list.innerHTML = '';
+  const customCategories = categories.filter(cat => !defaultCategories.includes(cat));
+  if (!customCategories.length) {
+    const li = document.createElement('li');
+    li.className = 'custom-category-empty';
+    li.textContent = 'You have not added any custom categories yet.';
+    list.appendChild(li);
+    return;
+  }
+  customCategories.forEach(category => {
+    const li = document.createElement('li');
+    li.className = 'custom-category-pill';
+    const purpose = categoryMetadata[category]?.purpose || '';
+    li.innerHTML = `
+      <div class="category-pill-content">
+        <strong>${category}</strong>
+        ${purpose ? `<span class="category-purpose">${purpose}</span>` : ''}
+      </div>
+      <div class="category-pill-actions">
+        <button class="edit-category-btn" data-category="${category}" type="button" title="Edit category">✎</button>
+        <button class="delete-category-btn" data-category="${category}" type="button" title="Delete category">×</button>
+      </div>
+    `;
+    list.appendChild(li);
+  });
+}
+
+document.addEventListener('click', event => {
+  const editCatBtn = event.target.closest('.edit-category-btn');
+  if (editCatBtn) {
+    const categoryName = editCatBtn.dataset.category;
+    const purpose = categoryMetadata[categoryName]?.purpose || '';
+    const nameInput = document.getElementById('newCategoryName');
+    const purposeInput = document.getElementById('categoryPurpose');
+    if (nameInput && purposeInput) {
+      nameInput.value = categoryName;
+      nameInput.disabled = true;
+      purposeInput.value = purpose;
+      openCreateCategoryModal();
+    }
+  }
+  
+  const deleteCatBtn = event.target.closest('.delete-category-btn');
+  if (deleteCatBtn) {
+    const categoryName = deleteCatBtn.dataset.category;
+    const hasTransactions = tx.some(t => t.cat === categoryName);
+    const message = hasTransactions 
+      ? `Category "${categoryName}" is used in transactions. Delete anyway?`
+      : `Delete category "${categoryName}"?`;
+    if (confirm(message)) {
+      categories = categories.filter(cat => cat !== categoryName);
+      delete categoryMetadata[categoryName];
+      saveCategories();
+      saveCategoryMetadata();
+      refreshCategorySelects();
+      updateProfileStats(); // Update category count
+    }
+  }
+  
+  const editGoalBtn = event.target.closest('.edit-goal-btn');
+  if (editGoalBtn) {
+    const goalId = Number(editGoalBtn.dataset.goalId);
+    const goal = goals.find(g => g.id === goalId);
+    if (goal) openGoalModal(goal);
+  }
+  
+  const deleteGoalBtn = event.target.closest('.delete-goal-btn');
+  if (deleteGoalBtn) {
+    const goalId = Number(deleteGoalBtn.dataset.goalId);
+    if (confirm('Are you sure you want to delete this goal?')) {
+      goals = goals.filter(g => g.id !== goalId);
+      saveGoals();
+      updateGoalDisplays();
+    }
+  }
+});
+
 function refreshCategorySelects(preferredSelection = null) {
   const selectConfigs = [
     { element: document.getElementById('categoryInput'), placeholder: document.getElementById('categoryInput')?.dataset.placeholder || 'Select category' },
     { element: document.getElementById('editCategoryInput'), placeholder: 'Select category' },
     { element: document.getElementById('lr_categoryInput'), placeholder: 'Select category' }
   ];
-
   selectConfigs.forEach(({ element, placeholder }) => {
     if (!element) return;
-
     const currentValue = preferredSelection || element.value;
+    const parentGroup = element.closest('.input-group');
+    
+    // Wrap select in manage container if not already wrapped
+    if (parentGroup && !parentGroup.querySelector('.category-select-with-manage')) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'category-select-with-manage';
+      element.parentNode.insertBefore(wrapper, element);
+      wrapper.appendChild(element);
+      
+      const manageLink = document.createElement('button');
+      manageLink.type = 'button';
+      manageLink.className = 'manage-categories-link';
+      manageLink.textContent = 'Manage';
+      manageLink.addEventListener('click', () => {
+        // Open category modal with the select ID so we can populate it after
+        openCreateCategoryModal(element.id);
+      });
+      wrapper.appendChild(manageLink);
+    }
+    
     element.innerHTML = '';
-
     const placeholderOption = document.createElement('option');
     placeholderOption.value = '';
     placeholderOption.disabled = true;
     placeholderOption.textContent = placeholder;
     if (!currentValue) placeholderOption.selected = true;
     element.appendChild(placeholderOption);
-
     categories.forEach(category => {
       const option = document.createElement('option');
       option.value = category;
@@ -130,67 +233,24 @@ function refreshCategorySelects(preferredSelection = null) {
       if (purpose) option.title = purpose;
       element.appendChild(option);
     });
-
     if (currentValue && categories.includes(currentValue)) {
       element.value = currentValue;
     }
   });
-
+  const lrGoalSelect = document.getElementById('lr_goalAllocationInput');
+  const quickGoalSelect = document.getElementById('goalAllocationInput');
+  const editGoalSelect = document.getElementById('editGoalAllocationInput');
+  [lrGoalSelect, quickGoalSelect, editGoalSelect].forEach(sel => {
+    if (sel && !sel.querySelector('option')) {
+      const base = document.createElement('option');
+      base.value = '';
+      base.textContent = 'None';
+      sel.appendChild(base);
+    }
+  });
   updateCategoryFilterOptions(document.getElementById('categoryFilter')?.value || 'all');
   renderCustomCategoryList();
 }
-
-function renderCustomCategoryList() {
-  const list = document.getElementById('customCategoriesList');
-  if (!list) return;
-
-  list.innerHTML = '';
-  const customCategories = categories.filter(cat => !defaultCategories.includes(cat));
-
-  if (!customCategories.length) {
-    const li = document.createElement('li');
-    li.className = 'custom-category-empty';
-    li.textContent = 'You have not added any custom categories yet.';
-    list.appendChild(li);
-    return;
-  }
-
-  customCategories.forEach(category => {
-    const li = document.createElement('li');
-    li.className = 'custom-category-pill';
-    const purpose = categoryMetadata[category]?.purpose;
-    li.innerHTML = `
-      <strong>${category}</strong>
-      ${purpose ? `<span>${purpose}</span>` : ''}
-    `;
-    list.appendChild(li);
-  });
-}
-
-function updateCategoryFilterOptions(selectedValue = 'all') {
-  const filterDropdown = document.getElementById('categoryFilter');
-  if (!filterDropdown) return;
-
-  const transactionCategories = Array.from(new Set(
-    (Array.isArray(tx) ? tx : [])
-      .map(t => (t && t.cat) ? t.cat : null)
-      .filter(Boolean)
-  ));
-
-  const combined = Array.from(new Set(['all', ...categories, ...transactionCategories]));
-  filterDropdown.innerHTML = '';
-
-  combined.forEach(category => {
-    const option = document.createElement('option');
-    option.value = category;
-    option.textContent = category === 'all' ? 'All Categories' : category;
-    filterDropdown.appendChild(option);
-  });
-
-  filterDropdown.value = combined.includes(selectedValue) ? selectedValue : 'all';
-}
-
-refreshCategorySelects();
 
 const createCategoryModal = document.getElementById('createCategoryModal');
 const closeCategoryModalBtn = document.getElementById('closeCategoryModal');
@@ -206,71 +266,77 @@ function openCreateCategoryModal(selectId = null) {
     if (nameInput) nameInput.value = '';
     if (purposeInput) purposeInput.value = '';
     createCategoryModal.classList.add('show');
-    nameInput?.focus();
+    if (nameInput) nameInput.focus();
   }
 }
 
 function closeCreateCategoryModal() {
-  createCategoryModal?.classList.remove('show');
+  if (createCategoryModal) createCategoryModal.classList.remove('show');
   pendingCategorySelectId = null;
 }
 
-manageCategoriesBtn?.addEventListener('click', () => openCreateCategoryModal());
-closeCategoryModalBtn?.addEventListener('click', closeCreateCategoryModal);
-createCategoryModal?.addEventListener('click', (event) => {
-  if (event.target === createCategoryModal) closeCreateCategoryModal();
-});
+if (manageCategoriesBtn) {
+  manageCategoriesBtn.addEventListener('click', () => openCreateCategoryModal());
+}
 
-saveCategoryBtn?.addEventListener('click', () => {
-  const nameInput = document.getElementById('newCategoryName');
-  if (!nameInput) return;
+if (closeCategoryModalBtn) {
+  closeCategoryModalBtn.addEventListener('click', closeCreateCategoryModal);
+}
 
-  const normalizedName = normalizeCategoryName(nameInput.value);
-  const purposeInput = document.getElementById('categoryPurpose');
-  const purposeValue = purposeInput?.value.trim() || '';
-  if (!normalizedName) {
-    alert('Please enter a category name.');
-    nameInput.focus();
-    return;
-  }
+if (createCategoryModal) {
+  createCategoryModal.addEventListener('click', event => {
+    if (event.target === createCategoryModal) closeCreateCategoryModal();
+  });
+}
 
-  const exists = categories.some(cat => cat.toLowerCase() === normalizedName.toLowerCase());
-  if (exists) {
-    if (purposeValue) {
-      categoryMetadata[normalizedName] = { purpose: purposeValue };
-      saveCategoryMetadata();
-      refreshCategorySelects(normalizedName);
+if (saveCategoryBtn) {
+  saveCategoryBtn.addEventListener('click', () => {
+    const nameInput = document.getElementById('newCategoryName');
+    if (!nameInput) return;
+    const normalizedName = normalizeCategoryName(nameInput.value);
+    const purposeInput = document.getElementById('categoryPurpose');
+    const purposeValue = purposeInput?.value.trim() || '';
+    if (!normalizedName) {
+      alert('Please enter a category name.');
+      if (nameInput) nameInput.focus();
+      return;
     }
-    alert('This category already exists.');
+    
+    // Check if editing (name input is disabled)
+    const isEditing = nameInput.disabled;
+    
+    if (!isEditing) {
+      const exists = categories.some(cat => cat.toLowerCase() === normalizedName.toLowerCase());
+      if (exists) {
+        if (purposeValue) {
+          categoryMetadata[normalizedName] = { purpose: purposeValue };
+          saveCategoryMetadata();
+          refreshCategorySelects(normalizedName);
+        }
+        alert('This category already exists.');
+        if (pendingCategorySelectId) {
+          const existingSelect = document.getElementById(pendingCategorySelectId);
+          if (existingSelect) existingSelect.value = normalizedName;
+        }
+        closeCreateCategoryModal();
+        return;
+      }
+      categories.push(normalizedName);
+      categories.sort((a, b) => a.localeCompare(b));
+    }
+    
+    categoryMetadata[normalizedName] = { purpose: purposeValue };
+    saveCategories();
+    saveCategoryMetadata();
+    refreshCategorySelects(normalizedName);
     if (pendingCategorySelectId) {
-      const existingSelect = document.getElementById(pendingCategorySelectId);
-      if (existingSelect) existingSelect.value = normalizedName;
+      const targetSelect = document.getElementById(pendingCategorySelectId);
+      if (targetSelect) targetSelect.value = normalizedName;
     }
+    nameInput.disabled = false;
     closeCreateCategoryModal();
-    return;
-  }
-
-  categories.push(normalizedName);
-  categories.sort((a, b) => a.localeCompare(b));
-  categoryMetadata[normalizedName] = { purpose: purposeValue };
-  saveCategories();
-  saveCategoryMetadata();
-  refreshCategorySelects(normalizedName);
-
-  if (pendingCategorySelectId) {
-    const targetSelect = document.getElementById(pendingCategorySelectId);
-    if (targetSelect) targetSelect.value = normalizedName;
-  }
-
-  closeCreateCategoryModal();
-});
-
-// Recalculate budget.remaining using totals and persist
-function recalcAndSaveBudget() {
-  const totals = computeBudgetTotals();
-  budget.total = totals.totalIncome;
-  budget.remaining = Math.max(0, totals.totalIncome - totals.totalExpenses);
-  return totals;
+    updateProfileStats(); // Update category count
+  });
 }
 
 const budgetBreakdownModal = document.getElementById('budgetBreakdownModal');
@@ -278,78 +344,74 @@ const closeBreakdownModalBtn = document.getElementById('closeBreakdownModal');
 const breakdownCategoryList = document.getElementById('breakdownCategoryList');
 const remainingAmountButton = document.getElementById('remainingAmount');
 
-function formatCurrency(value = 0) {
-  const amount = Number(value) || 0;
-  return `$${amount.toFixed(2)}`;
-}
-
 function updateBudgetBreakdownDetails() {
   if (!budgetBreakdownModal) return;
-
   const totals = computeBudgetTotals();
-  const remaining = budget.remaining;
-
   const totalEl = document.getElementById('breakdownTotalBudget');
   const remainingEl = document.getElementById('breakdownRemaining');
   const spentEl = document.getElementById('breakdownSpent');
   const allocatedEl = document.getElementById('breakdownAllocated');
   const incomeEl = document.getElementById('breakdownIncome');
   const netEl = document.getElementById('breakdownNet');
-
   if (totalEl) totalEl.textContent = formatCurrency(budget.total);
-  if (remainingEl) remainingEl.textContent = formatCurrency(remaining);
+  if (remainingEl) remainingEl.textContent = formatCurrency(budget.remaining);
   if (spentEl) spentEl.textContent = formatCurrency(totals.spentExcludingAllocations);
   if (allocatedEl) allocatedEl.textContent = formatCurrency(totals.allocatedToGoals);
   if (incomeEl) incomeEl.textContent = formatCurrency(totals.totalIncome);
   if (netEl) netEl.textContent = formatCurrency(totals.totalIncome - totals.totalExpenses);
-
   const progressFill = document.getElementById('breakdownProgressFill');
   const progressLabel = document.getElementById('breakdownProgressLabel');
   const utilization = budget.total ? (totals.spentExcludingAllocations / budget.total) * 100 : 0;
-  if (progressFill) progressFill.style.width = `${Math.min(100, Math.max(0, utilization)).toFixed(0)}%`;
-  if (progressLabel) progressLabel.textContent = `${Math.min(100, Math.max(0, utilization)).toFixed(0)}% used`;
-
+  const clamped = Math.min(100, Math.max(0, utilization));
+  if (progressFill) progressFill.style.width = `${clamped.toFixed(0)}%`;
+  if (progressLabel) progressLabel.textContent = `${clamped.toFixed(0)}% used`;
   if (breakdownCategoryList) {
     breakdownCategoryList.innerHTML = '';
-    const recent = tx.slice().reverse().slice(0, 5);
+    const recent = (Array.isArray(tx) ? tx : []).slice().reverse().slice(0, 5);
     if (!recent.length) {
       const li = document.createElement('li');
-      li.className = 'empty-row';
       li.textContent = 'No activity yet.';
       breakdownCategoryList.appendChild(li);
     } else {
       recent.forEach(item => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${item.cat || 'General'}</span><span class="amount ${item.type}">${item.type === 'income' ? '+' : '-'}$${Number(item.amt).toFixed(2)}</span>`;
+        const amt = Number(item.amt) || 0;
+        const typeClass = item.type === 'income' ? 'income' : 'expense';
+        li.innerHTML = `<span>${item.cat || 'General'}</span><span class="amount ${typeClass}">$${amt.toFixed(2)}</span>`;
         breakdownCategoryList.appendChild(li);
       });
     }
-    const hint = document.getElementById('breakdownCategoryHint');
-    if (hint) hint.textContent = 'Recent activity';
   }
 }
 
 function openBudgetBreakdownModal() {
   updateBudgetBreakdownDetails();
-  budgetBreakdownModal?.classList.add('show');
+  if (budgetBreakdownModal) budgetBreakdownModal.classList.add('show');
 }
 
 function closeBudgetBreakdownModal() {
-  budgetBreakdownModal?.classList.remove('show');
-  document.getElementById('tab-text')?.click();
+  if (budgetBreakdownModal) budgetBreakdownModal.classList.remove('show');
 }
 
-remainingAmountButton?.addEventListener('click', openBudgetBreakdownModal);
-remainingAmountButton?.addEventListener('keypress', (event) => {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    openBudgetBreakdownModal();
-  }
-});
-closeBreakdownModalBtn?.addEventListener('click', closeBudgetBreakdownModal);
-budgetBreakdownModal?.addEventListener('click', (event) => {
-  if (event.target === budgetBreakdownModal) closeBudgetBreakdownModal();
-});
+if (remainingAmountButton) {
+  remainingAmountButton.addEventListener('click', openBudgetBreakdownModal);
+  remainingAmountButton.addEventListener('keypress', event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openBudgetBreakdownModal();
+    }
+  });
+}
+
+if (closeBreakdownModalBtn) {
+  closeBreakdownModalBtn.addEventListener('click', closeBudgetBreakdownModal);
+}
+
+if (budgetBreakdownModal) {
+  budgetBreakdownModal.addEventListener('click', event => {
+    if (event.target === budgetBreakdownModal) closeBudgetBreakdownModal();
+  });
+}
 
 const fab = document.getElementById('fab');
 const quickAddModal = document.getElementById('quickAddModal');
@@ -370,54 +432,35 @@ if (saveTransactionBtn) {
     const noteInput = document.getElementById('noteInput');
     const categoryInput = document.getElementById('categoryInput');
     const typeInput = document.querySelector('input[name="txType"]:checked');
-
+    const goalAllocationInput = document.getElementById('goalAllocationInput');
     if (!amountInput || !categoryInput || !typeInput) return;
-
     const amount = parseFloat(amountInput.value);
     const category = categoryInput.value;
-
     if (isNaN(amount) || amount <= 0) {
       alert('Please enter a valid amount');
       return;
     }
-
     if (!category) {
       alert('Please select a category');
       return;
     }
-
     const transaction = {
       id: Date.now(),
       amt: amount,
       cat: category,
       type: typeInput.value,
-      merchant: document.getElementById('merchantInput')?.value || '',
       note: noteInput?.value || '',
       date: new Date().toISOString(),
-      recurring: document.getElementById('recurringInput')?.value || 'no',
-      goalAllocation: document.getElementById('goalAllocationInput')?.value || '',
+      goalAllocation: goalAllocationInput?.value || ''
     };
-
     if (!Array.isArray(tx)) tx = [];
     tx.push(transaction);
-
-    if (transaction.goalAllocation) {
-      updateGoalProgress(transaction);
-    }
-
+    if (transaction.goalAllocation) updateGoalProgress(transaction);
     recalcAndSaveBudget();
-
-    // reset fields
     amountInput.value = '';
     if (noteInput) noteInput.value = '';
     if (categoryInput.options.length) categoryInput.selectedIndex = 0;
-    const merchant = document.getElementById('merchantInput');
-    if (merchant) merchant.value = '';
-    const recurringSel = document.getElementById('recurringInput');
-    if (recurringSel) recurringSel.value = 'no';
-    const goalAllocSel = document.getElementById('goalAllocationInput');
-    if (goalAllocSel) goalAllocSel.value = '';
-
+    if (goalAllocationInput) goalAllocationInput.value = '';
     quickAddModal.classList.remove('show');
     updateBudgetDisplays();
     updateGoalDisplays();
@@ -425,68 +468,52 @@ if (saveTransactionBtn) {
   };
 }
 
-function render(){
-  // Recalculate budget first (using centralized logic that excludes goal allocations from 'spent')
+function render() {
   recalcAndSaveBudget();
   updateBudgetDisplays();
-
-  // Render recent transactions on home page
   const transactionsList = document.getElementById('transactionsList');
   if (transactionsList) {
     transactionsList.innerHTML = '';
-    
-    if (!Array.isArray(tx)) {
-      console.error('Transaction data is not an array');
-      return;
-    }
-
-    tx.slice().reverse().slice(0, 5).forEach(t => {
-      if (!t || typeof t !== 'object') {
-        console.error('Invalid transaction:', t);
-        return;
-      }
-
-      let li = document.createElement('li');
+    if (!Array.isArray(tx)) return;
+    const recentCount = 3; // Show only 3 most recent to minimize scrolling
+    tx.slice().reverse().slice(0, recentCount).forEach(t => {
+      if (!t || typeof t !== 'object') return;
+      const li = document.createElement('li');
       li.className = 'activity-item';
-
-      // Safely format the date
       let dateStr;
       try {
-        dateStr = t.date ? new Date(t.date).toLocaleDateString() : 'No date';
-      } catch(e) {
-        dateStr = 'Invalid date';
+        dateStr = t.date ? new Date(t.date).toLocaleDateString() : '';
+      } catch (e) {
+        dateStr = '';
       }
-
-      let amountStr;
-      try {
-        amountStr = typeof t.amt === 'number' ? t.amt.toFixed(2) : '0.00';
-      } catch(e) {
-        amountStr = '0.00';
-      }
-
-      li.innerHTML = `<div>
-                        <div>${t.cat || 'Uncategorized'}</div>
-                        <div>${t.note || ''}</div>
-                        <div style="font-size: 0.8em; opacity: 0.7">${dateStr}</div>
-                      </div>
-                      <div class="amount ${t.type || 'expense'}">$${amountStr}</div>`;
+      const amt = Number(t.amt) || 0;
+      li.innerHTML = `
+        <div>
+          <div>${t.cat || 'Uncategorized'}</div>
+          <div>${t.note || ''}</div>
+          <div style="font-size:1rem;color:#374151">${dateStr}</div>
+        </div>
+        <div class="activity-item-actions">
+          <button class="delete-btn" data-delete-id="${t.id}" type="button">Delete</button>
+          <div class="amount ${t.type || 'expense'}">$${amt.toFixed(2)}</div>
+        </div>
+      `;
       transactionsList.appendChild(li);
     });
   }
-
-  // Render detailed transactions view
   const currentFilter = document.getElementById('categoryFilter')?.value || 'all';
   renderDetailedTransactions(currentFilter);
+  updateProfileStats();
 }
 
-// Goal Management
 let goals = [];
 
-// Goal Modal Elements
 const goalModal = document.getElementById('goalModal');
 const closeGoalModal = document.getElementById('closeGoalModal');
 const addGoalBtn = document.getElementById('addGoalBtn');
 const saveGoalBtn = document.getElementById('saveGoal');
+
+function saveGoals() {}
 
 function openGoalModal(goal = null) {
   const modalTitle = document.getElementById('goalModalTitle');
@@ -496,7 +523,7 @@ function openGoalModal(goal = null) {
   const categoryInput = document.getElementById('goalCategory');
   const notesInput = document.getElementById('goalNotes');
   const goalIdInput = document.getElementById('editGoalId');
-
+  if (!modalTitle || !nameInput || !amountInput || !deadlineInput || !categoryInput || !notesInput || !goalIdInput) return;
   if (goal) {
     modalTitle.textContent = 'Edit Goal';
     nameInput.value = goal.name;
@@ -514,12 +541,18 @@ function openGoalModal(goal = null) {
     notesInput.value = '';
     goalIdInput.value = '';
   }
-
-  goalModal.classList.add('show');
+  if (goalModal) goalModal.classList.add('show');
 }
 
-closeGoalModal.onclick = () => goalModal.classList.remove('show');
-if (addGoalBtn) addGoalBtn.onclick = () => openGoalModal();
+if (closeGoalModal) {
+  closeGoalModal.onclick = () => {
+    if (goalModal) goalModal.classList.remove('show');
+  };
+}
+
+if (addGoalBtn) {
+  addGoalBtn.onclick = () => openGoalModal();
+}
 
 function addGoal(goalData) {
   const goal = {
@@ -539,7 +572,6 @@ function addGoal(goalData) {
   return goal;
 }
 
-// Save goal handler
 if (saveGoalBtn) {
   saveGoalBtn.onclick = () => {
     const nameInput = document.getElementById('goalName');
@@ -548,12 +580,11 @@ if (saveGoalBtn) {
     const categoryInput = document.getElementById('goalCategory');
     const notesInput = document.getElementById('goalNotes');
     const goalIdInput = document.getElementById('editGoalId');
-
+    if (!nameInput || !amountInput || !deadlineInput || !categoryInput || !notesInput || !goalIdInput) return;
     if (!nameInput.value || !amountInput.value) {
       alert('Please fill in the required fields');
       return;
     }
-
     const goalData = {
       name: nameInput.value,
       amount: parseFloat(amountInput.value),
@@ -561,9 +592,7 @@ if (saveGoalBtn) {
       category: categoryInput.value,
       notes: notesInput.value
     };
-
     if (goalIdInput.value) {
-      // Edit existing goal
       const goalIndex = goals.findIndex(g => g.id === parseInt(goalIdInput.value));
       if (goalIndex !== -1) {
         goals[goalIndex] = {
@@ -576,94 +605,65 @@ if (saveGoalBtn) {
         };
       }
     } else {
-      // Add new goal
       addGoal(goalData);
     }
-
     saveGoals();
     updateGoalDisplays();
-    goalModal.classList.remove('show');
+    if (goalModal) goalModal.classList.remove('show');
   };
 }
 
-function deleteGoal(goalId) {
-  if (confirm('Are you sure you want to delete this goal?')) {
-    goals = goals.filter(g => g.id !== goalId);
-    saveGoals();
-    updateGoalOptions();
-    updateGoalDisplays();
-  }
-}
-
 function updateGoalProgress(transaction) {
-  const goal = goals.find(g => g.id === parseInt(transaction.goalAllocation));
-  if (!goal) return;
-
-  // Remove transaction from all goals first (in case it was previously allocated to a different goal)
+  const goalId = parseInt(transaction.goalAllocation);
+  if (!goalId) return;
   goals.forEach(g => {
     g.transactions = g.transactions.filter(t => t.id !== transaction.id);
-    g.currentAmount = g.transactions.reduce((sum, t) => {
-      return sum + (t.type === 'expense' ? -t.amt : t.amt);
-    }, 0);
   });
-
-  // Add transaction to new goal
+  const goal = goals.find(g => g.id === goalId);
+  if (!goal) {
+    saveGoals();
+    updateGoalDisplays();
+    return;
+  }
   goal.transactions.push(transaction);
   goal.currentAmount = goal.transactions.reduce((sum, t) => {
-    return sum + (t.type === 'expense' ? -t.amt : t.amt);
+    const amt = Number(t.amt) || 0;
+    if (t.type === 'expense') return sum - amt;
+    if (t.type === 'income') return sum + amt;
+    return sum;
   }, 0);
-
   saveGoals();
   updateGoalDisplays();
 }
 
-function saveGoals() {
-  // no persistence needed
-}
-
 function updateGoalOptions(selectElement = null) {
-  const selects = selectElement ? [selectElement] : 
-    [document.getElementById('goalAllocationInput'), document.getElementById('editGoalAllocationInput'), document.getElementById('lr_goalAllocationInput')];
-  
+  const selects = selectElement
+    ? [selectElement]
+    : [
+        document.getElementById('goalAllocationInput'),
+        document.getElementById('editGoalAllocationInput'),
+        document.getElementById('lr_goalAllocationInput')
+      ];
   selects.forEach(select => {
     if (!select) return;
-
-    // Store current value
     const currentValue = select.value;
-    
-    // Clear existing options (except the "None" option)
     select.innerHTML = '<option value="">None</option>';
-    
-    // Add goal options
     goals.forEach(goal => {
       const option = document.createElement('option');
       option.value = goal.id;
-      option.textContent = `${goal.name} (${((goal.currentAmount / goal.targetAmount) * 100).toFixed(1)}%)`;
+      const pct = goal.targetAmount ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
+      option.textContent = `${goal.name} (${pct.toFixed(1)}%)`;
       select.appendChild(option);
     });
-    
-    // Restore selected value if it still exists
     if (currentValue && [...select.options].some(opt => opt.value === currentValue)) {
       select.value = currentValue;
     }
   });
 }
 
-function updateGoalDisplays() {
-  const totalGoals = goals.length;
-  const averageProgress = goals.length ?
-    goals.reduce((sum, goal) => sum + (goal.currentAmount / goal.targetAmount * 100), 0) / goals.length :
-    0;
-  const totalSaved = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
-
-  updateGoalOptions();
-  renderProfileGoalsMirror({ totalGoals, averageProgress, totalSaved });
-}
-
 function renderProfileGoalsMirror(stats) {
   const mirror = document.getElementById('profileGoalsMirror');
   if (!mirror) return;
-
   const header = `
     <div class="mirror-header">
       <div>
@@ -672,22 +672,19 @@ function renderProfileGoalsMirror(stats) {
       </div>
     </div>
   `;
-
   if (!goals.length) {
     mirror.innerHTML = `
       ${header}
-      <p style="margin-top:16px;color:var(--muted);">No goals yet. Tap “Add Goal” above to get started.</p>
+      <p style="margin-top:16px;color:var(--muted);">No goals yet. Tap "Add Goal" above to get started.</p>
     `;
     return;
   }
-
   const goalsMarkup = goals.map(goal => {
-    const progress = (goal.currentAmount / goal.targetAmount) * 100;
-    const progressClamped = Math.min(Math.max(progress, 0), 100);
-    const daysLeft = goal.deadline ?
-      `${Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24))} days left` :
-      '';
-
+    const pct = goal.targetAmount ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
+    const progressClamped = Math.min(Math.max(pct, 0), 100);
+    const daysLeft = goal.deadline
+      ? `${Math.max(0, Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24)))} days left`
+      : '';
     return `
       <div class="goal-item">
         <div class="goal-header">
@@ -695,27 +692,29 @@ function renderProfileGoalsMirror(stats) {
             <div class="goal-name">${goal.name}</div>
             <div class="goal-category">${goal.category}</div>
           </div>
-          ${daysLeft ? `<div class="goal-deadline">${daysLeft}</div>` : ''}
+          <div class="goal-actions">
+            <button class="edit-goal-btn" data-goal-id="${goal.id}" type="button" title="Edit goal">✎</button>
+            <button class="delete-goal-btn" data-goal-id="${goal.id}" type="button" title="Delete goal">×</button>
+            ${daysLeft ? `<div class="goal-deadline">${daysLeft}</div>` : ''}
+          </div>
         </div>
         <div class="goal-progress-info">
-          <div class="goal-amount">$${goal.currentAmount.toFixed(2)} / $${goal.targetAmount.toFixed(2)}</div>
+          <div class="goal-amount">${formatCurrency(goal.currentAmount)} / ${formatCurrency(goal.targetAmount)}</div>
         </div>
         <div class="goal-progress-bar">
-          <div class="goal-progress" style="width:${progressClamped}%"></div>
+          <div class="goal-progress" style="width:${progressClamped}%;"></div>
         </div>
         <div class="goal-footer">
-          <div class="goal-percentage">${progress.toFixed(1)}% Complete</div>
+          <div class="goal-percentage">${pct.toFixed(1)}% Complete</div>
           <div class="goal-stats">
             <div class="goal-stat">
-              <i class="fi fi-rr-arrow-up"></i>
-              <span class="goal-stat-value">$${(goal.targetAmount - goal.currentAmount).toFixed(2)} to go</span>
+              <span class="goal-stat-value">${formatCurrency(goal.targetAmount - goal.currentAmount)} to go</span>
             </div>
           </div>
         </div>
       </div>
     `;
   }).join('');
-
   mirror.innerHTML = `
     ${header}
     <div class="goals-overview">
@@ -734,63 +733,98 @@ function renderProfileGoalsMirror(stats) {
         </div>
       </div>
       <div class="summary-card total-saved">
-        <svg class="summary-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="6" width="22" height="12" rx="2" ry="2" fill="currentColor" opacity="0.08"/>
-          <rect x="3" y="8" width="18" height="8" rx="1" ry="1" fill="none" stroke="currentColor" stroke-width="1.2"/>
-          <text x="12" y="13.2" text-anchor="middle" font-size="9" fill="currentColor" font-family="Arial, Helvetica, sans-serif" font-weight="700">$</text>
-        </svg>
+        <div class="summary-icon">$</div>
         <div class="summary-content">
           <div class="summary-label">Total Saved</div>
-          <div class="summary-value">$${stats.totalSaved.toFixed(2)}</div>
+          <div class="summary-value">${formatCurrency(stats.totalSaved)}</div>
         </div>
       </div>
     </div>
-    <div class="goals-list mirror-list">
+    <div class="goals-list">
       ${goalsMarkup}
     </div>
   `;
 }
 
-// Initial render and budget update
-render();
-updateBudgetDisplays();
-updateGoalDisplays();
+function updateGoalDisplays() {
+  const totalGoals = goals.length;
+  const averageProgress = goals.length
+    ? goals.reduce((sum, goal) => {
+        const pct = goal.targetAmount ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
+        return sum + pct;
+      }, 0) / goals.length
+    : 0;
+  const totalSaved = goals.reduce((sum, goal) => sum + (goal.currentAmount || 0), 0);
+  updateGoalOptions();
+  renderProfileGoalsMirror({ totalGoals, averageProgress, totalSaved });
+  updateProfileStats();
+  renderDashboardGoals();
+}
 
-// profile 
-const avatar = document.getElementById("avatar");
-const notification = document.getElementById("profile_notification");
-const closeNotification = document.getElementById("close_notification");
-const notificationTitle = document.querySelector('.notification_title');
-const notificationText = document.querySelector('.notification_text');
+function renderDashboardGoals() {
+  const container = document.getElementById('dashboardGoalsList');
+  if (!container) return;
+  
+  if (!goals.length) {
+    container.innerHTML = '<p style="color:var(--text);font-size:1.05rem;font-weight:600;text-align:center;padding:16px;">No goals yet. Start planning your financial future!</p>';
+    return;
+  }
+  
+  // Show top 2 goals with highest progress
+  const topGoals = goals
+    .map(goal => ({
+      ...goal,
+      progress: goal.targetAmount ? (goal.currentAmount / goal.targetAmount) * 100 : 0
+    }))
+    .sort((a, b) => b.progress - a.progress)
+    .slice(0, 2);
+  
+  container.innerHTML = topGoals.map(goal => {
+    const progressClamped = Math.max(0, Math.min(100, goal.progress));
+    return `
+      <div class="dashboard-goal-item">
+        <div class="dashboard-goal-header">
+          <div class="dashboard-goal-name">${goal.name}</div>
+          <div class="dashboard-goal-percentage">${goal.progress.toFixed(0)}%</div>
+        </div>
+        <div class="dashboard-goal-progress-bar">
+          <div class="dashboard-goal-progress" style="width:${progressClamped}%;"></div>
+        </div>
+        <div class="dashboard-goal-footer">
+          <span class="dashboard-goal-amount">${formatCurrency(goal.currentAmount)} / ${formatCurrency(goal.targetAmount)}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
-avatar.addEventListener("click", () => {
-  notificationTitle.textContent = "Welcome to SpendSense!";
-  notificationText.textContent = "Hello Testudo!";
-  notification.style.display = "flex";
-});
+function updateProfileStats() {
+  const totalTransactionsEl = document.getElementById('totalTransactionsCount');
+  const activeGoalsEl = document.getElementById('activeGoalsCount');
+  const categoriesEl = document.getElementById('categoriesCount');
+  
+  if (totalTransactionsEl) {
+    totalTransactionsEl.textContent = Array.isArray(tx) ? tx.length : 0;
+  }
+  if (activeGoalsEl) {
+    activeGoalsEl.textContent = goals.length;
+  }
+  if (categoriesEl) {
+    categoriesEl.textContent = categories.length;
+  }
+}
 
-closeNotification.addEventListener("click", () => {
-  notification.style.display = "none";
-});
-
-// Function to render transactions grouped by category
 function renderDetailedTransactions(filterCategory = 'all') {
   const container = document.querySelector('.transactions-by-category');
   if (!container) return;
-
   container.innerHTML = '';
   if (!Array.isArray(tx)) return;
-
   const activeFilter = filterCategory || 'all';
   updateCategoryFilterOptions(activeFilter);
-  
-  // Group transactions by category
   const groupedTransactions = {};
   const categoryTotals = {};
-  
   tx.forEach(t => {
     if (!t || typeof t !== 'object') return;
-    
     if (activeFilter === 'all' || t.cat === activeFilter) {
       const category = t.cat || 'Uncategorized';
       if (!groupedTransactions[category]) {
@@ -798,233 +832,146 @@ function renderDetailedTransactions(filterCategory = 'all') {
         categoryTotals[category] = { expense: 0, income: 0 };
       }
       groupedTransactions[category].push(t);
-      if (t.type === 'expense') {
-        categoryTotals[category].expense += t.amt;
-      } else {
-        categoryTotals[category].income += t.amt;
-      }
+      const amt = Number(t.amt) || 0;
+      if (t.type === 'expense') categoryTotals[category].expense += amt;
+      if (t.type === 'income') categoryTotals[category].income += amt;
     }
   });
-
-  // Sort categories alphabetically
   const sortedCategories = Object.keys(groupedTransactions).sort();
-
-  // Render each category group
   sortedCategories.forEach(category => {
     const categoryGroup = document.createElement('div');
     categoryGroup.className = 'category-group';
-    
     const transactions = groupedTransactions[category];
     const totals = categoryTotals[category];
-    
+    const txMarkup = transactions
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .map(t => {
+        let dateStr;
+        try {
+          dateStr = t.date ? new Date(t.date).toLocaleDateString() : '';
+        } catch (e) {
+          dateStr = '';
+        }
+        const amt = Number(t.amt) || 0;
+        const typeClass = t.type === 'income' ? 'income' : 'expense';
+        return `
+          <div class="transaction-item">
+            <div class="transaction-details">
+              <div class="transaction-note">${t.note || 'No description'}</div>
+              <div class="transaction-date">${dateStr}</div>
+            </div>
+            <button class="edit-transaction-btn" type="button" data-transaction-id="${t.id}">
+              <i class="fi fi-rr-edit"></i>
+            </button>
+            <button class="delete-transaction-btn" type="button" data-delete-id="${t.id}">
+              <i class="fi fi-rr-trash"></i>
+            </button>
+            <div class="amount ${typeClass}">$${amt.toFixed(2)}</div>
+          </div>
+        `;
+      })
+      .join('');
     categoryGroup.innerHTML = `
       <div class="category-header">
         <div class="category-name">${category}</div>
         <div class="category-total">
-          ${totals.expense > 0 ? `<span class="expense">-$${totals.expense.toFixed(2)}</span>` : ''}
-          ${totals.income > 0 ? `<span class="income">+$${totals.income.toFixed(2)}</span>` : ''}
+          ${totals.expense > 0 ? `<span class="total-amount expense">$${totals.expense.toFixed(2)}</span>` : ''}
+          ${totals.income > 0 ? `<span class="total-amount income">$${totals.income.toFixed(2)}</span>` : ''}
         </div>
       </div>
       <div class="category-transactions">
-        ${transactions
-          .sort((a, b) => new Date(b.date) - new Date(a.date))
-          .map(t => {
-            let dateStr;
-            try {
-              dateStr = t.date ? new Date(t.date).toLocaleDateString() : 'No date';
-            } catch(e) {
-              dateStr = 'Invalid date';
-            }
-
-            let amountStr;
-            try {
-              amountStr = typeof t.amt === 'number' ? t.amt.toFixed(2) : '0.00';
-            } catch(e) {
-              amountStr = '0.00';
-            }
-
-            return `
-              <div class="transaction-item">
-                <div class="transaction-details">
-                  <div class="transaction-note">${t.note || 'No description'}</div>
-                  <div class="transaction-date">${dateStr}</div>
-                </div>
-                <button class="edit-transaction-btn" type="button" data-transaction-id="${t.id}">
-                  <i class="fi fi-rr-edit"></i>
-                </button>
-                <div class="amount ${t.type || 'expense'}">
-                  ${t.type === 'expense' ? '-' : '+'}$${amountStr}
-                </div>
-              </div>
-            `;
-          }).join('')}
+        ${txMarkup}
       </div>
     `;
-    
     container.appendChild(categoryGroup);
   });
-
-  // Update category totals
   updateCategoryTotals();
 }
 
 function updateCategoryTotals() {
   const totalsContainer = document.getElementById('categoryTotals');
   if (!totalsContainer) return;
-
+  
+  const currentFilter = document.getElementById('categoryFilter')?.value || 'all';
   let totalExpense = 0;
   let totalIncome = 0;
-
+  
   (Array.isArray(tx) ? tx : []).forEach(t => {
     if (!t || typeof t !== 'object') return;
-    if (t.type === 'expense') totalExpense += Number(t.amt) || 0;
-    if (t.type === 'income') totalIncome += Number(t.amt) || 0;
+    // Only count transactions that match the current filter
+    if (currentFilter === 'all' || t.cat === currentFilter) {
+      const amt = Number(t.amt) || 0;
+      if (t.type === 'expense') totalExpense += amt;
+      if (t.type === 'income') totalIncome += amt;
+    }
   });
-
+  
+  const net = totalIncome - totalExpense;
+  const filterText = currentFilter === 'all' ? 'All Categories' : currentFilter;
+  
   totalsContainer.innerHTML = `
-    <div class="totals-header">Summary</div>
+    <div class="totals-header">Summary - ${filterText}</div>
     <div class="total-row">
       <span class="total-label">Total Expenses:</span>
-      <span class="total-amount expense">-$${totalExpense.toFixed(2)}</span>
+      <span class="total-amount expense">$${totalExpense.toFixed(2)}</span>
     </div>
     <div class="total-row">
       <span class="total-label">Total Income:</span>
-      <span class="total-amount income">+$${totalIncome.toFixed(2)}</span>
+      <span class="total-amount income">$${totalIncome.toFixed(2)}</span>
     </div>
     <div class="total-row">
       <span class="total-label">Net:</span>
-      <span class="total-amount ${totalIncome - totalExpense >= 0 ? 'income' : 'expense'}">
-        ${totalIncome - totalExpense >= 0 ? '+' : '-'}$${Math.abs(totalIncome - totalExpense).toFixed(2)}
+      <span class="total-amount ${net >= 0 ? 'income' : 'expense'}">
+        $${Math.abs(net).toFixed(2)}
       </span>
     </div>
   `;
 }
 
-// Edit transaction functionality
 const editTransactionModal = document.getElementById('editTransactionModal');
 const closeEditModal = document.getElementById('closeEditModal');
-const updateTransaction = document.getElementById('updateTransaction');
+const updateTransactionBtn = document.getElementById('updateTransaction');
 
 function openEditModal(transaction) {
+  if (!editTransactionModal) return;
   const editAmountInput = document.getElementById('editAmountInput');
-  const editMerchantInput = document.getElementById('editMerchantInput');
   const editNoteInput = document.getElementById('editNoteInput');
   const editCategoryInput = document.getElementById('editCategoryInput');
-  const editRecurringInput = document.getElementById('editRecurringInput');
   const editGoalAllocationInput = document.getElementById('editGoalAllocationInput');
   const editTransactionId = document.getElementById('editTransactionId');
   const editTypeInputs = document.getElementsByName('editTxType');
-
-  // Set basic fields
-  editAmountInput.value = transaction.amt;
-  editMerchantInput.value = transaction.merchant || '';
-  editNoteInput.value = transaction.note || '';
-  editCategoryInput.value = transaction.cat;
-  editTransactionId.value = transaction.id;
-  
-  // Set advanced fields
-  editRecurringInput.value = transaction.recurring || 'no';
-  editGoalAllocationInput.value = transaction.goalAllocation || '';
-  
-  // Set transaction type radio button
+  refreshCategorySelects(transaction.cat);
+  if (editAmountInput) editAmountInput.value = transaction.amt;
+  if (editNoteInput) editNoteInput.value = transaction.note || '';
+  if (editCategoryInput) editCategoryInput.value = transaction.cat || '';
+  if (editTransactionId) editTransactionId.value = transaction.id;
+  if (editGoalAllocationInput) {
+    updateGoalOptions(editGoalAllocationInput);
+    editGoalAllocationInput.value = transaction.goalAllocation || '';
+  }
   editTypeInputs.forEach(input => {
-    if (input.value === transaction.type) {
-      input.checked = true;
-    }
+    input.checked = input.value === transaction.type;
   });
-
-  // Update goal allocation options
-  updateGoalOptions(editGoalAllocationInput);
-
   editTransactionModal.classList.add('show');
 }
 
-closeEditModal.onclick = () => editTransactionModal.classList.remove('show');
-
-updateTransaction.onclick = () => {
-  const editAmountInput = document.getElementById('editAmountInput');
-  const editNoteInput = document.getElementById('editNoteInput');
-  const editCategoryInput = document.getElementById('editCategoryInput');
-  const editTransactionId = document.getElementById('editTransactionId');
-  const editTypeInput = document.querySelector('input[name="editTxType"]:checked');
-
-  const amount = parseFloat(editAmountInput.value);
-  const category = editCategoryInput.value;
-  
-  if (isNaN(amount) || amount <= 0) {
-    alert('Please enter a valid amount');
-    return;
-  }
-
-  if (!category) {
-    alert('Please select a category');
-    return;
-  }
-
-  // Find and update the transaction
-  const transactionIndex = tx.findIndex(t => t.id === parseInt(editTransactionId.value));
-  if (transactionIndex === -1) {
-    alert('Transaction not found');
-    return;
-  }
-
-  const oldTransaction = tx[transactionIndex];
-  const newTransaction = {
-    ...oldTransaction,
-    amt: amount,
-    cat: category,
-    type: editTypeInput.value,
-    note: editNoteInput.value
+if (closeEditModal) {
+  closeEditModal.onclick = () => {
+    editTransactionModal.classList.remove('show');
   };
+}
 
-  // Update budget
-  if (oldTransaction.type === 'expense') {
-    budget.remaining += oldTransaction.amt;
-  } else {
-    budget.remaining -= oldTransaction.amt;
-  }
-  
-  if (newTransaction.type === 'expense') {
-    budget.remaining -= amount;
-  } else {
-    budget.remaining += amount;
-  }
-
-  tx[transactionIndex] = newTransaction;
-  
-  if (newTransaction.goalAllocation) {
-    updateGoalProgress(newTransaction);
-  }
-  
-  recalcAndSaveBudget();
-  
-  editTransactionModal.classList.remove('show');
-  updateBudgetDisplays();
-  render();
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-  const categoryFilter = document.getElementById('categoryFilter');
-  if (categoryFilter) {
-    categoryFilter.addEventListener('change', (e) => {
-      renderDetailedTransactions(e.target.value);
-    });
-  }
-});
-
-const lrSaveBtn = document.getElementById('lr_saveTransaction');
-const lrCancelBtn = document.getElementById('lr_cancel');
-if (lrSaveBtn) {
-  lrSaveBtn.addEventListener('click', () => {
-    const amount = parseFloat(document.getElementById('lr_amountInput')?.value || 0);
-    const category = document.getElementById('lr_categoryInput')?.value;
-    const merchant = document.getElementById('lr_merchantInput')?.value || '';
-    const note = document.getElementById('lr_noteInput')?.value || '';
-    const recurring = document.getElementById('lr_recurringInput')?.value || 'no';
-    const goalAllocation = document.getElementById('lr_goalAllocationInput')?.value || '';
-
-    const type = (document.querySelector('input[name="lr_txType"]:checked') || {}).value || 'expense';
-
+if (updateTransactionBtn) {
+  updateTransactionBtn.onclick = () => {
+    const editAmountInput = document.getElementById('editAmountInput');
+    const editNoteInput = document.getElementById('editNoteInput');
+    const editCategoryInput = document.getElementById('editCategoryInput');
+    const editTransactionId = document.getElementById('editTransactionId');
+    const editTypeInput = document.querySelector('input[name="editTxType"]:checked');
+    const editGoalAllocationInput = document.getElementById('editGoalAllocationInput');
+    if (!editAmountInput || !editCategoryInput || !editTransactionId || !editTypeInput) return;
+    const amount = parseFloat(editAmountInput.value);
+    const category = editCategoryInput.value;
     if (isNaN(amount) || amount <= 0) {
       alert('Please enter a valid amount');
       return;
@@ -1033,57 +980,30 @@ if (lrSaveBtn) {
       alert('Please select a category');
       return;
     }
-
-    const transaction = {
-      id: Date.now(),
+    const transactionIndex = tx.findIndex(t => t.id === parseInt(editTransactionId.value));
+    if (transactionIndex === -1) {
+      alert('Transaction not found');
+      return;
+    }
+    const oldTransaction = tx[transactionIndex];
+    const newTransaction = {
+      ...oldTransaction,
       amt: amount,
       cat: category,
-      type,
-      merchant,
-      note,
-      date: new Date().toISOString(),
-      recurring,
-      goalAllocation,
+      type: editTypeInput.value,
+      note: editNoteInput?.value || '',
+      goalAllocation: editGoalAllocationInput?.value || ''
     };
-
-    if (!Array.isArray(tx)) tx = [];
-    tx.push(transaction);
-
-    if (transaction.goalAllocation) updateGoalProgress(transaction);
-
+    tx[transactionIndex] = newTransaction;
     recalcAndSaveBudget();
-
-    const lrCategorySelect = document.getElementById('lr_categoryInput');
-    if (lrCategorySelect && lrCategorySelect.options.length) {
-      lrCategorySelect.selectedIndex = 0;
-    }
-    document.getElementById('lr_add_form').style.display = 'none';
+    if (newTransaction.goalAllocation) updateGoalProgress(newTransaction);
+    editTransactionModal.classList.remove('show');
     updateBudgetDisplays();
-    updateGoalDisplays();
     render();
-  });
-}
-if (lrCancelBtn) {
-  lrCancelBtn.addEventListener('click', () => {
-    document.getElementById('lr_add_form').style.display = 'none';
-  });
-}
-function initGraphSwitcher() {
-  const select = document.getElementById('graph_type');
-  const graphs = document.querySelectorAll('.graph');
-  if (!select || !graphs.length) return;
-
-  const showGraph = (id) => {
-    graphs.forEach(img => {
-      img.style.display = img.id === id ? 'block' : 'none';
-    });
   };
-
-  showGraph(select.value);
-  select.addEventListener('change', (event) => showGraph(event.target.value));
 }
 
-document.addEventListener('click', (event) => {
+document.addEventListener('click', event => {
   const editBtn = event.target.closest('.edit-transaction-btn');
   if (!editBtn) return;
   const id = Number(editBtn.dataset.transactionId);
@@ -1092,8 +1012,157 @@ document.addEventListener('click', (event) => {
   if (transaction) openEditModal(transaction);
 });
 
-// Reminders tab
-const reminderForm = document.getElementById('reminderForm');
+const viewAllTransactionsBtn = document.getElementById('viewAllTransactions');
+if (viewAllTransactionsBtn) {
+  viewAllTransactionsBtn.addEventListener('click', () => {
+    const transactionsTab = document.getElementById('tab-lr');
+    if (transactionsTab) transactionsTab.click();
+  });
+}
+
+const viewAllGoalsBtn = document.getElementById('viewAllGoals');
+if (viewAllGoalsBtn) {
+  viewAllGoalsBtn.addEventListener('click', () => {
+    const personalizeTab = document.getElementById('tab-personalize');
+    if (personalizeTab) personalizeTab.click();
+  });
+}
+
+document.addEventListener('click', event => {
+  const pill = event.target.closest('.custom-category-pill button');
+  if (pill) {
+    const categoryName = pill.dataset.category;
+    if (confirm(`Delete category "${categoryName}"? This cannot be undone.`)) {
+      categories = categories.filter(c => c !== categoryName);
+      delete categoryMetadata[categoryName];
+      saveCategories();
+      saveCategoryMetadata();
+      refreshCategorySelects();
+    }
+  }
+});
+
+document.addEventListener('click', event => {
+  const deleteBtn = event.target.closest('.delete-btn, .delete-transaction-btn');
+  if (!deleteBtn) return;
+  const id = Number(deleteBtn.dataset.deleteId);
+  if (!id) return;
+  if (confirm('Are you sure you want to delete this transaction?')) {
+    tx = tx.filter(t => t.id !== id);
+    recalcAndSaveBudget();
+    updateBudgetDisplays();
+    render();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const categoryFilter = document.getElementById('categoryFilter');
+  if (categoryFilter) {
+    categoryFilter.addEventListener('change', e => {
+      renderDetailedTransactions(e.target.value);
+    });
+  }
+});
+
+const lrSaveBtn = document.getElementById('lr_saveTransaction');
+const lrCancelBtn = document.getElementById('lr_cancel');
+const addTransactionBtn = document.getElementById('addTransactionBtn');
+
+if (addTransactionBtn) {
+  addTransactionBtn.addEventListener('click', () => {
+    const lrForm = document.getElementById('lr_add_form');
+    if (lrForm) {
+      lrForm.style.display = lrForm.style.display === 'none' ? 'block' : 'none';
+    }
+  });
+}
+
+if (lrSaveBtn) {
+  lrSaveBtn.addEventListener('click', () => {
+    const amount = parseFloat(document.getElementById('lr_amountInput')?.value || 0);
+    const category = document.getElementById('lr_categoryInput')?.value;
+    const note = document.getElementById('lr_noteInput')?.value || '';
+    const goalAllocation = document.getElementById('lr_goalAllocationInput')?.value || '';
+    const type = (document.querySelector('input[name="lr_txType"]:checked') || {}).value || 'expense';
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+    if (!category) {
+      alert('Please select a category');
+      return;
+    }
+    const transaction = {
+      id: Date.now(),
+      amt: amount,
+      cat: category,
+      type,
+      note,
+      date: new Date().toISOString(),
+      goalAllocation
+    };
+    if (!Array.isArray(tx)) tx = [];
+    tx.push(transaction);
+    if (transaction.goalAllocation) updateGoalProgress(transaction);
+    recalcAndSaveBudget();
+    const lrCategorySelect = document.getElementById('lr_categoryInput');
+    if (lrCategorySelect && lrCategorySelect.options.length) {
+      lrCategorySelect.selectedIndex = 0;
+    }
+    const lrForm = document.getElementById('lr_add_form');
+    if (lrForm) lrForm.style.display = 'none';
+    updateBudgetDisplays();
+    updateGoalDisplays();
+    render();
+  });
+}
+
+if (lrCancelBtn) {
+  lrCancelBtn.addEventListener('click', () => {
+    const lrForm = document.getElementById('lr_add_form');
+    if (lrForm) lrForm.style.display = 'none';
+  });
+}
+
+function initGraphSwitcher() {
+  const prevBtn = document.getElementById('prevTrend');
+  const nextBtn = document.getElementById('nextTrend');
+  const titleEl = document.getElementById('currentTrendTitle');
+  const graphs = document.querySelectorAll('.graph');
+  
+  if (!prevBtn || !nextBtn || !graphs.length) return;
+  
+  const trendData = [
+    { id: 'spendingByCategory', title: 'Monthly Spending by Category' },
+    { id: 'budgetVsActual', title: 'Budget vs Actual Spending' },
+    { id: 'incomeTrends', title: 'Income vs Expenses Over Time' },
+    { id: 'spendingBreakdown', title: 'Spending Breakdown' },
+    { id: 'goalProgress', title: 'Financial Goals Progress' }
+  ];
+  
+  let currentIndex = 0;
+  
+  function showGraph(index) {
+    graphs.forEach(img => img.classList.remove('active-graph'));
+    const currentGraph = document.getElementById(trendData[index].id);
+    if (currentGraph) currentGraph.classList.add('active-graph');
+    if (titleEl) titleEl.textContent = trendData[index].title;
+  }
+  
+  prevBtn.addEventListener('click', () => {
+    currentIndex = (currentIndex - 1 + trendData.length) % trendData.length;
+    showGraph(currentIndex);
+  });
+  
+  nextBtn.addEventListener('click', () => {
+    currentIndex = (currentIndex + 1) % trendData.length;
+    showGraph(currentIndex);
+  });
+  
+  // Show first graph
+  showGraph(0);
+}
+
 const reminderNameInput = document.getElementById('reminderName');
 const reminderAmountInput = document.getElementById('reminderAmount');
 const reminderDueDateInput = document.getElementById('reminderDueDate');
@@ -1106,44 +1175,6 @@ const defaultDueIso = defaultDue.toISOString().split('T')[0];
 
 let reminders = [];
 
-function renderReminders() {
-  if (!reminderList) return;
-  reminderList.innerHTML = '';
-
-  const baseCardStyle = 'background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.03);';
-  const infoStyle = 'display:flex;flex-direction:column;gap:4px;';
-  const nameStyle = 'font-size:1.05rem;font-weight:700;';
-  const metaStyle = 'color:var(--muted);font-size:0.9rem;';
-
-  if (!reminders.length) {
-    const emptyRow = document.createElement('div');
-    emptyRow.style.cssText = baseCardStyle;
-    emptyRow.innerHTML = '<div style="' + infoStyle + '"><div style="' + nameStyle + '">No reminders yet</div><div style="' + metaStyle + '">Add one using the form above.</div></div>';
-    reminderList.appendChild(emptyRow);
-    return;
-  }
-
-  reminders.forEach(reminder => {
-    const row = document.createElement('div');
-    row.style.cssText = baseCardStyle;
-
-    const info = document.createElement('div');
-    info.style.cssText = infoStyle;
-    info.innerHTML = `
-      <div style="${nameStyle}">${reminder.name}</div>
-      <div style="${metaStyle}">$${Number(reminder.amount).toFixed(2)} • Due ${reminder.dueDate ? new Date(reminder.dueDate).toLocaleDateString() : '—'}</div>
-    `;
-
-    const pill = document.createElement('div');
-    pill.style.cssText = `padding:6px 12px;border-radius:999px;font-weight:600;font-size:0.85rem;${reminder.recurring ? 'background:rgba(74,157,124,0.15);color:var(--accent);' : 'background:rgba(220,53,69,0.1);color:var(--bad);'}`;
-    pill.textContent = reminder.recurring ? 'Recurring' : 'One-time';
-
-    row.appendChild(info);
-    row.appendChild(pill);
-    reminderList.appendChild(row);
-  });
-}
-
 function setReminderFormDefaults() {
   if (!reminderNameInput || !reminderAmountInput || !reminderDueDateInput) return;
   reminderNameInput.value = '';
@@ -1152,18 +1183,60 @@ function setReminderFormDefaults() {
   if (reminderRecurringInput) reminderRecurringInput.checked = false;
 }
 
-reminderForm?.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const name = reminderNameInput?.value.trim();
-  const amount = parseFloat(reminderAmountInput?.value || '0');
-  const dueDate = reminderDueDateInput?.value;
-  const recurring = !!reminderRecurringInput?.checked;
+function renderReminders() {
+  if (!reminderList) return;
+  reminderList.innerHTML = '';
+  if (!reminders.length) {
+    const row = document.createElement('div');
+    row.className = 'reminder-item';
+    row.innerHTML = `
+      <div class="reminder-info">
+        <div class="reminder-name">No reminders yet</div>
+        <div class="reminder-meta">Add one using the form above.</div>
+      </div>
+    `;
+    reminderList.appendChild(row);
+    return;
+  }
+  reminders.forEach(reminder => {
+    const row = document.createElement('div');
+    row.className = 'reminder-item';
+    const dueText = reminder.dueDate ? new Date(reminder.dueDate).toLocaleDateString() : '—';
+    const recurringText = reminder.recurring ? `Monthly on ${new Date(reminder.dueDate).getDate()}${getDaySuffix(new Date(reminder.dueDate).getDate())}` : 'One-time';
+    row.innerHTML = `
+      <div class="reminder-info">
+        <div class="reminder-name">${reminder.name}</div>
+        <div class="reminder-meta">$${Number(reminder.amount).toFixed(2)} • Due ${dueText} • ${recurringText}</div>
+      </div>
+      <div class="reminder-actions">
+        <button class="reminder-edit-btn" data-reminder-id="${reminder.id}" type="button">Edit</button>
+        <button class="reminder-delete-btn" data-reminder-id="${reminder.id}" type="button">Delete</button>
+      </div>
+    `;
+    reminderList.appendChild(row);
+  });
+}
 
+function getDaySuffix(day) {
+  if (day > 3 && day < 21) return 'th';
+  switch (day % 10) {
+    case 1: return 'st';
+    case 2: return 'nd';
+    case 3: return 'rd';
+    default: return 'th';
+  }
+}
+
+function addReminder() {
+  if (!reminderNameInput || !reminderAmountInput || !reminderDueDateInput) return;
+  const name = reminderNameInput.value.trim();
+  const amount = parseFloat(reminderAmountInput.value || '0');
+  const dueDate = reminderDueDateInput.value;
+  const recurring = !!reminderRecurringInput?.checked;
   if (!name || isNaN(amount) || !dueDate) {
     alert('Enter a name, amount, and due date.');
     return;
   }
-
   reminders.push({
     id: Date.now(),
     name,
@@ -1171,11 +1244,40 @@ reminderForm?.addEventListener('submit', (event) => {
     dueDate,
     recurring
   });
-
+  setReminderFormDefaults();
   renderReminders();
-  reminderForm.reset();
+}
+
+document.addEventListener('click', event => {
+  const editBtn = event.target.closest('.reminder-edit-btn');
+  if (editBtn) {
+    const id = Number(editBtn.dataset.reminderId);
+    const reminder = reminders.find(r => r.id === id);
+    if (reminder && reminderNameInput && reminderAmountInput && reminderDueDateInput) {
+      reminderNameInput.value = reminder.name;
+      reminderAmountInput.value = reminder.amount;
+      reminderDueDateInput.value = reminder.dueDate;
+      if (reminderRecurringInput) reminderRecurringInput.checked = reminder.recurring;
+      reminders = reminders.filter(r => r.id !== id);
+      renderReminders();
+      reminderNameInput.focus();
+    }
+  }
+  
+  const deleteBtn = event.target.closest('.reminder-delete-btn');
+  if (deleteBtn) {
+    const id = Number(deleteBtn.dataset.reminderId);
+    if (confirm('Are you sure you want to delete this reminder?')) {
+      reminders = reminders.filter(r => r.id !== id);
+      renderReminders();
+    }
+  }
 });
 
+refreshCategorySelects();
+render();
+updateBudgetDisplays();
+updateGoalDisplays();
 setReminderFormDefaults();
 renderReminders();
 initGraphSwitcher();

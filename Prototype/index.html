@@ -6,8 +6,7 @@
   <title>SpendSense</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
-  <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/3.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
-
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/3.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
 </head>
 <body>
   <div id="app">
@@ -15,242 +14,186 @@
       <h1>SpendSense</h1>
     </header>
     <div id="content">
-<!-- tab 1: welcome -->
-  <section id="text_tab" class="tab active">
-    <h2 style="display:none">Welcome</h2>
+      <section id="text_tab" class="tab active">
+        <section class="card budget-card main-budget-card">
+          <div class="month">Monthly Budget</div>
+          <div class="subtle">Remaining</div>
+          <button class="amount-remaining" id="remainingAmount" type="button" aria-label="Open detailed budget breakdown">$0.00</button>
+          <div class="row fineprint">
+            <span id="totalBudgetLabel">Total Budget: $0.00</span>
+            <span id="spentSoFarLabel">Spent So Far: $0.00</span>
+          </div>
+        </section>
 
-    <!-- Budget header card -->
-    <section class="card budget-card" style="max-width:600px;margin:12px auto 16px;">
-      <div class="month">Monthly Budget</div>
-      <div class="subtle">Remaining</div>
-      <button class="amount-remaining" id="remainingAmount" type="button" aria-label="Open detailed budget breakdown">$0.00</button>
-      <div class="row fineprint">
-        <span id="totalBudgetLabel">Total Budget: $0.00</span>
-        <span id="spentSoFarLabel">Spent So Far: $0.00</span>
-      </div>
-    </section>
+        <section class="card" style="max-width:600px;margin:0 auto 20px;">
+          <div class="section-header">
+            <div class="section-title">Recent Activity</div>
+            <button id="viewAllTransactions" class="view-all-link" type="button">View All →</button>
+          </div>
+          <ul id="transactionsList" class="activity-list"></ul>
+        </section>
 
-    <!-- Recent Activity -->
-    <section class="card" style="max-width:600px;margin:0 auto 80px;">
-      <div class="section-title">Recent Activity</div>
-      <br>
-      <ul id="transactionsList" class="activity-list"></ul>
-    </section>
+        <section class="card" style="max-width:600px;margin:0 auto 80px;">
+          <div class="section-header">
+            <div class="section-title">Goal Progress</div>
+            <button id="viewAllGoals" class="view-all-link" type="button">View All →</button>
+          </div>
+          <div id="dashboardGoalsList" class="dashboard-goals-list"></div>
+        </section>
 
-    <!-- Quick-Add Modal -->
-    <div id="quickAddModal" class="modal" aria-hidden="true">
-      <div class="modal-content wide-modal" role="dialog" aria-modal="true" aria-labelledby="addTxTitle">
-        <h3 id="addTxTitle">Add Transaction</h3>
-
-        <div class="type-select" style="display:flex;gap:16px;justify-content:center;margin-bottom:20px">
-          <label><input type="radio" name="txType" value="expense" checked> Expense</label>
-          <label><input type="radio" name="txType" value="income"> Income</label>
-        </div>
-
-        <div class="form-grid">
-          <div class="form-section">
-            <h4>Basic Information</h4>
-            <div class="input-group">
-              <label for="amountInput">Amount ($)</label>
-              <input type="number" id="amountInput" placeholder="0.00" min="0" step="0.01" />
+        <div id="quickAddModal" class="modal" aria-hidden="true">
+          <div class="modal-content wide-modal" role="dialog" aria-modal="true" aria-labelledby="addTxTitle">
+            <h3 id="addTxTitle">Add Transaction</h3>
+            <div class="type-select">
+              <label><input type="radio" name="txType" value="expense" checked> Expense</label>
+              <label><input type="radio" name="txType" value="income"> Income</label>
             </div>
-            
-            <div class="input-group category-select-group">
-              <label for="categoryInput">Category</label>
-              <select id="categoryInput" data-placeholder="Select category"></select>
+            <div class="form-grid">
+              <div class="form-section">
+                <h4>Basic Information</h4>
+                <div class="input-group">
+                  <label for="amountInput">Amount ($)</label>
+                  <input type="number" id="amountInput" placeholder="0.00" min="0" step="0.01" inputmode="decimal" />
+                </div>
+                <div class="input-group category-select-group">
+                  <label for="categoryInput">Category</label>
+                  <select id="categoryInput" data-placeholder="Select category"></select>
+                </div>
+              </div>
+              <div class="form-section">
+                <h4>Transaction Details</h4>
+
+                <div class="input-group">
+                  <label for="noteInput">Description</label>
+                  <textarea id="noteInput" placeholder="Add details about this transaction"></textarea>
+                </div>
+              </div>
+              <div class="form-section">
+                <h4>Financial Planning</h4>
+                
+                <div class="input-group">
+                  <label for="goalAllocationInput">Allocate to Goal</label>
+                  <select id="goalAllocationInput">
+                    <option value="">None</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button id="saveTransaction" class="btn btn-primary" type="button">Save</button>
+              <button id="closeModal" class="btn" type="button">Cancel</button>
             </div>
           </div>
+        </div>
 
-          <div class="form-section">
-            <h4>Transaction Details</h4>
-            <div class="input-group">
-              <label for="merchantInput">Merchant/Payee</label>
-              <input type="text" id="merchantInput" placeholder="Enter merchant name" />
+        <div id="budgetBreakdownModal" class="modal" aria-hidden="true">
+          <div class="modal-content breakdown-modal" role="dialog" aria-modal="true" aria-labelledby="budgetBreakdownTitle">
+            <button class="modal-close" id="closeBreakdownModal" aria-label="Close budget breakdown">&times;</button>
+            <h3 id="budgetBreakdownTitle">Budget Breakdown</h3>
+            <p class="modal-subtext">See how your budget is allocated.</p>
+            <div class="breakdown-grid">
+              <div>
+                <div class="breakdown-label">Total Budget</div>
+                <div class="breakdown-value" id="breakdownTotalBudget">$0.00</div>
+              </div>
+              <div>
+                <div class="breakdown-label">Remaining</div>
+                <div class="breakdown-value accent" id="breakdownRemaining">$0.00</div>
+              </div>
+              <div>
+                <div class="breakdown-label">Spent So Far</div>
+                <div class="breakdown-value danger" id="breakdownSpent">$0.00</div>
+              </div>
+              <div>
+                <div class="breakdown-label">Allocated to Goals</div>
+                <div class="breakdown-value" id="breakdownAllocated">$0.00</div>
+              </div>
+              <div>
+                <div class="breakdown-label">Income Logged</div>
+                <div class="breakdown-value good" id="breakdownIncome">$0.00</div>
+              </div>
+              <div>
+                <div class="breakdown-label">Net Position</div>
+                <div class="breakdown-value" id="breakdownNet">$0.00</div>
+              </div>
             </div>
-            
-            <div class="input-group">
-              <label for="noteInput">Description</label>
-              <textarea id="noteInput" placeholder="Add details about this transaction"></textarea>
+            <div class="progress-wrapper">
+              <div class="progress-header">
+                <span>Budget Utilization</span>
+                <span id="breakdownProgressLabel">0% used</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="breakdownProgressFill"></div>
+              </div>
+            </div>
+            <div class="breakdown-categories">
+              <div class="breakdown-categories-header">
+                <h4>Recent Activity</h4>
+                <span id="breakdownCategoryHint">Recent activity</span>
+              </div>
+              <ul id="breakdownCategoryList"></ul>
             </div>
           </div>
+        </div>
 
-          <div class="form-section">
-            <h4>Financial Planning</h4>
-            <div class="input-group">
-              <label for="recurringInput">Is this a recurring transaction?</label>
-              <select id="recurringInput">
-                <option value="no">No</option>
-                <option value="monthly">Monthly</option>
-                <option value="weekly">Weekly</option>
-\              </select>
+        <button id="fab" aria-label="Add transaction" type="button">+</button>
+        <div id="txFeed" aria-live="polite"></div>
+      </section>
+
+      <div id="editTransactionModal" class="modal" aria-hidden="true">
+        <div class="modal-content wide-modal" role="dialog" aria-modal="true" aria-labelledby="editTxTitle">
+          <h3 id="editTxTitle">Edit Transaction</h3>
+          <div class="type-select">
+            <label><input type="radio" name="editTxType" value="expense"> Expense</label>
+            <label><input type="radio" name="editTxType" value="income"> Income</label>
+          </div>
+          <div class="form-grid">
+            <div class="form-section">
+              <h4>Basic Information</h4>
+              <div class="input-group">
+                <label for="editAmountInput">Amount ($)</label>
+                <input type="number" id="editAmountInput" placeholder="0.00" min="0" step="0.01" />
+              </div>
+              <div class="input-group">
+                <label for="editCategoryInput">Category</label>
+                <select id="editCategoryInput"></select>
+              </div>
             </div>
-
-            <div class="input-group">
-              <label for="goalAllocationInput">Allocate to Goal</label>
-              <select id="goalAllocationInput">
-                <option value="">None</option>
-                <!-- Goals will be populated dynamically -->
-              </select>
+            <div class="form-section">
+              <h4>Transaction Details</h4>
+              <div class="input-group">
+                <label for="editNoteInput">Description</label>
+                <textarea id="editNoteInput" placeholder="Add details about this transaction"></textarea>
+              </div>
             </div>
-
+            <div class="form-section">
+              <h4>Financial Planning</h4>
+              
+              <div class="input-group">
+                <label for="editGoalAllocationInput">Allocate to Goal</label>
+                <select id="editGoalAllocationInput">
+                  <option value="">None</option>
+                </select>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div class="modal-actions">
-          <button id="saveTransaction" class="btn btn-primary">Save</button>
-          <button id="closeModal" class="btn">Cancel</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Budget Breakdown Modal -->
-    <div id="budgetBreakdownModal" class="modal" aria-hidden="true">
-      <div class="modal-content breakdown-modal" role="dialog" aria-modal="true" aria-labelledby="budgetBreakdownTitle">
-        <button class="modal-close" id="closeBreakdownModal" aria-label="Close budget breakdown">&times;</button>
-        <h3 id="budgetBreakdownTitle">Budget Breakdown</h3>
-        <p class="modal-subtext">See how your October budget is allocated.</p>
-        <div class="breakdown-grid">
-          <div>
-            <div class="breakdown-label">Total Budget</div>
-            <div class="breakdown-value" id="breakdownTotalBudget">$0.00</div>
+          <input type="hidden" id="editTransactionId" />
+          <div class="modal-actions">
+            <button id="updateTransaction" class="btn btn-primary" type="button">Update</button>
+            <button id="closeEditModal" class="btn" type="button">Cancel</button>
           </div>
-          <div>
-            <div class="breakdown-label">Remaining</div>
-            <div class="breakdown-value accent" id="breakdownRemaining">$0.00</div>
-          </div>
-          <div>
-            <div class="breakdown-label">Spent So Far</div>
-            <div class="breakdown-value danger" id="breakdownSpent">$0.00</div>
-          </div>
-          <div>
-            <div class="breakdown-label">Allocated to Goals</div>
-            <div class="breakdown-value" id="breakdownAllocated">$0.00</div>
-          </div>
-          <div>
-            <div class="breakdown-label">Income Logged</div>
-            <div class="breakdown-value good" id="breakdownIncome">$0.00</div>
-          </div>
-          <div>
-            <div class="breakdown-label">Net Position</div>
-            <div class="breakdown-value" id="breakdownNet">$0.00</div>
-          </div>
-        </div>
-        <div class="progress-wrapper">
-          <div class="progress-header">
-            <span>Budget Utilization</span>
-            <span id="breakdownProgressLabel">0% used</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" id="breakdownProgressFill" style="width:0%"></div>
-          </div>
-        </div>
-        <div class="breakdown-categories">
-          <div class="breakdown-categories-header">
-            <h4>Top Spending Categories</h4>
-            <span id="breakdownCategoryHint">Last 5 expenses</span>
-          </div>
-          <ul id="breakdownCategoryList"></ul>
-        </div>
-      </div>
-    </div>
-        <!-- Floating Action Button -->
-    <button id="fab" aria-label="Add transaction">+</button>
-    <!-- toasts -->
-    <div id="txFeed" aria-live="polite"></div>
-  </section>
-
-    <!-- Enhanced Transaction Modal -->
-  <div id="editTransactionModal" class="modal" aria-hidden="true">
-    <div class="modal-content wide-modal" role="dialog" aria-modal="true" aria-labelledby="editTxTitle">
-      <h3 id="editTxTitle">Edit Transaction</h3>
-
-      <div class="type-select" style="display:flex;gap:16px;justify-content:center;margin-bottom:20px">
-        <label><input type="radio" name="editTxType" value="expense"> Expense</label>
-        <label><input type="radio" name="editTxType" value="income"> Income</label>
-      </div>
-
-      <div class="form-grid">
-        <div class="form-section">
-          <h4>Basic Information</h4>
-          <div class="input-group">
-            <label for="editAmountInput">Amount ($)</label>
-            <input type="number" id="editAmountInput" placeholder="0.00" min="0" step="0.01" />
-          </div>
-          
-          <div class="input-group">
-            <label for="editCategoryInput">Category</label>
-            <select id="editCategoryInput">
-              <option value="" disabled>Select category</option>
-              <option>Groceries</option>
-              <option>Rent</option>
-              <option>Utilities</option>
-              <option>Transportation</option>
-              <option>Dining</option>
-              <option>Entertainment</option>
-              <option>Miscellaneous</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h4>Transaction Details</h4>
-          <div class="input-group">
-            <label for="editMerchantInput">Merchant/Payee</label>
-            <input type="text" id="editMerchantInput" placeholder="Enter merchant name" />
-          </div>
-          
-          <div class="input-group">
-            <label for="editNoteInput">Description</label>
-            <textarea id="editNoteInput" placeholder="Add details about this transaction"></textarea>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h4>Financial Planning</h4>
-          <div class="input-group">
-            <label for="editRecurringInput">Is this a recurring transaction?</label>
-            <select id="editRecurringInput">
-              <option value="no">No</option>
-              <option value="monthly">Monthly</option>
-              <option value="weekly">Weekly</option>
-            </select>
-          </div>
-
-          <div class="input-group">
-            <label for="editGoalAllocationInput">Allocate to Goal</label>
-            <select id="editGoalAllocationInput">
-              <option value="">None</option>
-              <!-- Goals will be populated dynamically -->
-            </select>
-          </div>
-
         </div>
       </div>
 
-      <input type="hidden" id="editTransactionId" />
-
-      <div class="modal-actions">
-        <button id="updateTransaction" class="btn btn-primary">Update</button>
-        <button id="closeEditModal" class="btn">Cancel</button>
-      </div>
-    </div>
-  </div>      
-  <!-- tab 2: Transactions -->
       <section id="lr_tab" class="tab">
         <h2>November Transaction History</h2>
         <div class="transactions-header">
           <div class="category-filter">
             <select id="categoryFilter">
               <option value="all">All Categories</option>
-              <option value="Groceries">Groceries</option>
-              <option value="Rent">Rent</option>
-              <option value="Utilities">Utilities</option>
-              <option value="Transportation">Transportation</option>
-              <option value="Dining">Dining</option>
-              <option value="Entertainment">Entertainment</option>
-              <option value="Miscellaneous">Miscellaneous</option>
             </select>
           </div>
+          <button id="addTransactionBtn" type="button">+ Add Transaction</button>
         </div>
 
         <div id="lr_add_form" class="lr-add-form" style="display:none; margin-top:16px;">
@@ -265,244 +208,217 @@
                 <label for="lr_categoryInput">Category</label>
                 <select id="lr_categoryInput">
                   <option value="" disabled selected>Select category</option>
-                  <option>Groceries</option>
-                  <option>Rent</option>
-                  <option>Utilities</option>
-                  <option>Transportation</option>
-                  <option>Dining</option>
-                  <option>Entertainment</option>
-                  <option>Miscellaneous</option>
                 </select>
               </div>
             </div>
-
             <div class="form-section">
               <h4>Transaction Details</h4>
-              <div class="input-group">
-                <label for="lr_merchantInput">Merchant/Payee</label>
-                <input type="text" id="lr_merchantInput" placeholder="Enter merchant name" />
-              </div>
+
               <div class="input-group">
                 <label for="lr_noteInput">Description</label>
                 <textarea id="lr_noteInput" placeholder="Add details about this transaction"></textarea>
               </div>
             </div>
-
             <div class="form-section">
               <h4>Financial Planning</h4>
-              <div class="input-group">
-                <label for="lr_recurringInput">Is this a recurring transaction?</label>
-                <select id="lr_recurringInput">
-                  <option value="no">No</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="weekly">Weekly</option>
-                </select>
-              </div>
+              
               <div class="input-group">
                 <label for="lr_goalAllocationInput">Allocate to Goal</label>
                 <select id="lr_goalAllocationInput">
                   <option value="">None</option>
                 </select>
               </div>
-              
               <div class="input-group">
                 <label>Type</label>
-                <div style="display:flex;gap:12px;align-items:center">
-                  <label><input type="radio" name="lr_txType" value="expense" checked/> Expense</label>
-                  <label><input type="radio" name="lr_txType" value="income"/> Income</label>
+                <div class="radio-row">
+                  <label><input type="radio" name="lr_txType" value="expense" checked> Expense</label>
+                  <label><input type="radio" name="lr_txType" value="income"> Income</label>
                 </div>
               </div>
             </div>
           </div>
-
-          <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:12px">
-            <button id="lr_saveTransaction" class="btn btn-primary">Save</button>
-            <button id="lr_cancel" class="btn">Cancel</button>
+          <div class="lr-actions">
+            <button id="lr_saveTransaction" class="btn btn-primary" type="button">Save</button>
+            <button id="lr_cancel" class="btn" type="button">Cancel</button>
           </div>
         </div>
 
         <div class="transactions-container">
-          <div class="transactions-by-category">
+          <div class="transactions-by-category"></div>
+          <div id="categoryTotals" class="category-totals"></div>
+        </div>
+      </section>
+
+      <section id="personalize_tab" class="tab">
+        <h2>Personalize</h2>
+        
+        <div class="card custom-categories-card">
+          <div class="custom-category-header">
+            <div>
+              <h3>Categories</h3>
+              <p class="custom-category-hint">Custom categories appear in Quick-Add, Transactions, and Goals.</p>
+            </div>
+            <button id="manageCategoriesBtn" class="btn btn-primary" type="button">Add Category</button>
           </div>
-          <div id="categoryTotals" class="category-totals">
+          <ul id="customCategoriesList" class="custom-category-list" aria-live="polite"></ul>
+        </div>
+
+        <div class="profile-goal-actions">
+          <button id="addGoalBtn" class="btn btn-primary" type="button"><i class="fi fi-rr-plus"></i> Add Goal</button>
+        </div>
+
+        <section id="profileGoalsMirror" class="profile-goals-mirror card" aria-live="polite"></section>
+
+        <div id="createCategoryModal" class="modal" aria-hidden="true">
+          <div class="modal-content create-category-modal" role="dialog" aria-modal="true" aria-labelledby="createCategoryTitle">
+            <button class="modal-close" id="closeCategoryModal" aria-label="Close category modal">&times;</button>
+            <h3 id="createCategoryTitle">Create Category</h3>
+            <p class="modal-subtext">Name a new budget category so you can tag future expenses with it.</p>
+            <div class="input-group">
+              <label for="newCategoryName">Category Name</label>
+              <input type="text" id="newCategoryName" placeholder="e.g., Pets" />
+            </div>
+            <div class="input-group">
+              <label for="categoryPurpose">Purpose</label>
+              <textarea id="categoryPurpose" placeholder="Why are you creating this bucket? (optional)"></textarea>
+            </div>
+            <div class="modal-actions">
+              <button id="saveCategory" class="btn btn-primary" type="button">Save Category</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="goalModal" class="modal" aria-hidden="true">
+          <div class="modal-content" role="dialog" aria-modal="true">
+            <h3 id="goalModalTitle">Add New Goal</h3>
+            <div class="input-group">
+              <label for="goalName">Goal Name</label>
+              <input type="text" id="goalName" placeholder="e.g., New Car" />
+            </div>
+            <div class="input-group">
+              <label for="goalAmount">Target Amount ($)</label>
+              <input type="number" id="goalAmount" min="0" step="0.01" placeholder="0.00" />
+            </div>
+            <div class="input-group">
+              <label for="goalDeadline">Target Date</label>
+              <input type="date" id="goalDeadline" />
+            </div>
+            <div class="input-group">
+              <label for="goalCategory">Category</label>
+              <select id="goalCategory">
+                <option value="savings">Savings</option>
+                <option value="purchase">Major Purchase</option>
+                <option value="emergency">Emergency Fund</option>
+                <option value="debt">Debt Payoff</option>
+                <option value="education">Education</option>
+                <option value="travel">Travel</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="goalNotes">Notes</label>
+              <textarea id="goalNotes" placeholder="Add any additional details about your goal..."></textarea>
+            </div>
+            <input type="hidden" id="editGoalId" />
+            <div class="modal-actions">
+              <button id="saveGoal" class="btn btn-primary" type="button">Save Goal</button>
+              <button id="closeGoalModal" class="btn" type="button">Cancel</button>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- tab 4: profile -->
       <section id="profile_tab" class="tab">
-        <h2>Profile</h2>
-        <div class="center">
-          <img id="avatar" src="images/testy.png" alt="Profile" />
-          <div class="name">Testudo</div>
-        </div>
-          <section class="card budget-card" style="max-width:600px;margin:12px auto 16px;">
-      <div class="month">November Monthly Budget</div>
-      <div class="subtle">Remaining</div>
-      <button class="amount-remaining" id="remainingAmount" type="button" aria-label="Open detailed budget breakdown">$0.00</button>
-      <div class="row fineprint">
-        <span id="totalBudgetLabel">Total Budget: $0.00</span>
-        <span id="spentSoFarLabel">Spent So Far: $0.00</span>
-      </div>
-    </section>
-
-      <div class="card custom-categories-card">
-        <div class="custom-category-header">
-          <div>
-            <h3>Categories</h3>
-            <p class="custom-category-hint">Custom categories appear in Quick-Add, Transactions, and Goals.</p>
-          </div>
-          <button id="manageCategoriesBtn" class="btn btn-primary">Manage Custom Category</button>
-        </div>
-        <ul id="customCategoriesList" class="custom-category-list" aria-live="polite"></ul>
-      </div>
-
-      <div id="createCategoryModal" class="modal" aria-hidden="true">
-        <div class="modal-content create-category-modal" role="dialog" aria-modal="true" aria-labelledby="createCategoryTitle">
-          <button class="modal-close" id="closeCategoryModal" aria-label="Close category modal">&times;</button>
-          <h3 id="createCategoryTitle">Create Category</h3>
-          <p class="modal-subtext">Name a new budget category so you can tag future expenses with it.</p>
-          <div class="input-group">
-            <label for="newCategoryName">Category Name</label>
-            <input type="text" id="newCategoryName" placeholder="e.g., Pets" />
-          </div>
-          <div class="input-group">
-            <label for="categoryPurpose">Purpose</label>
-            <textarea id="categoryPurpose" placeholder="Why are you creating this bucket? (optional)"></textarea>
-          </div>
-          <div class="modal-actions">
-            <button id="saveCategory" class="btn btn-primary">Save Category</button>
+        <h2>Profile Trends</h2>
+        <div class="profile-header-card-compact card">
+          <div class="profile-compact-layout">
+            <img id="avatar" src="images/testy.png" alt="Profile" />
+            <div class="profile-compact-info">
+              <div class="profile-name-compact">Testudo</div>
+              <div class="profile-stats-compact">
+                <div class="stat-compact">
+                  <span class="stat-value-compact" id="totalTransactionsCount">0</span>
+                  <span class="stat-label-compact">Transactions</span>
+                </div>
+                <div class="stat-compact">
+                  <span class="stat-value-compact" id="activeGoalsCount">0</span>
+                  <span class="stat-label-compact">Goals</span>
+                </div>
+                <div class="stat-compact">
+                  <span class="stat-value-compact" id="categoriesCount">0</span>
+                  <span class="stat-label-compact">Categories</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="profile-goal-actions">
-        <button id="addGoalBtn" class="btn btn-primary"><i class="fi fi-rr-plus"></i> Add Goal</button>
-      </div>
-
-      <section id="profileGoalsMirror" class="profile-goals-mirror card" aria-live="polite"></section>
-
-      <div id="goalModal" class="modal" aria-hidden="true">
-        <div class="modal-content" role="dialog" aria-modal="true">
-          <h3 id="goalModalTitle">Add New Goal</h3>
-          
-          <div class="input-group">
-            <label for="goalName">Goal Name</label>
-            <input type="text" id="goalName" placeholder="e.g., New Car" />
-          </div>
-
-          <div class="input-group">
-            <label for="goalAmount">Target Amount ($)</label>
-            <input type="number" id="goalAmount" min="0" step="0.01" placeholder="0.00" />
-          </div>
-
-          <div class="input-group">
-            <label for="goalDeadline">Target Date</label>
-            <input type="date" id="goalDeadline" />
-          </div>
-
-          <div class="input-group">
-            <label for="goalCategory">Category</label>
-            <select id="goalCategory">
-              <option value="savings">Savings</option>
-              <option value="purchase">Major Purchase</option>
-              <option value="emergency">Emergency Fund</option>
-              <option value="debt">Debt Payoff</option>
-              <option value="education">Education</option>
-              <option value="travel">Travel</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div class="input-group">
-            <label for="goalNotes">Notes</label>
-            <textarea id="goalNotes" placeholder="Add any additional details about your goal..."></textarea>
-          </div>
-
-          <input type="hidden" id="editGoalId" />
-
-          <div class="modal-actions">
-            <button id="saveGoal" class="btn btn-primary">Save Goal</button>
-            <button id="closeGoalModal" class="btn">Cancel</button>
-          </div>
-        </div>
-      </div>
-      </section>
-
-      <!-- tab 5: trends -->
-      <section id="choices_tab" class="tab">
-        <h2>Trends</h2>
         <div class="card">
-          <div class="row">
-            <label for="graph_type">Graph: </label>
-            <select id="graph_type">
-              <option value="spendingByCategory">Monthly Spending</option>
-              <option value="budgetVsActual">Spending vs Budget</option>
-              <option value="incomeTrends">Income vs Expenses</option>
-              <option value="spendingBreakdown">Spending Breakdown</option>
-              <option value="goalProgress">Goal Progress</option>
-
-            </select>
+          <div class="trends-header-nav">
+            <button class="trend-arrow-btn" id="prevTrend" type="button">
+              <i class="fi fi-rr-angle-left"></i>
+            </button>
+            <h3 id="currentTrendTitle">Monthly Spending by Category</h3>
+            <button class="trend-arrow-btn" id="nextTrend" type="button">
+              <i class="fi fi-rr-angle-right"></i>
+            </button>
           </div>
-
-        <div id="graph_output">
-          <img src="images/SpendingbyCategory.png" id="spendingByCategory" class="graph" alt="Spending by Category" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
-          <img src="images/SpendingvBudget.png" id="budgetVsActual" class="graph" alt="Budget vs Actual" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
-          <img src="images/IncomevExpenses.png" id="incomeTrends" class="graph" alt="Income Trends" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
-          <img src="images/Spending.png" id="spendingBreakdown" class="graph" alt="Spending Breakdown" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
-          <img src="images/GoalProgress.png" id="goalProgress" class="graph" alt="Goal Progress" style="max-width:100%; border-radius:10px; margin-bottom:10px;">
+          <div id="graph_output" class="graph-container">
+            <img src="SpendingbyCategory.png" id="spendingByCategory" class="graph active-graph" alt="Spending by Category">
+            <img src="SpendingvBudget.png" id="budgetVsActual" class="graph" alt="Budget vs Actual">
+            <img src="IncomevExpenses.png" id="incomeTrends" class="graph" alt="Income vs Expenses">
+            <img src="Spending.png" id="spendingBreakdown" class="graph" alt="Spending Breakdown">
+            <img src="GoalProgress.png" id="goalProgress" class="graph" alt="Goal Progress">
+          </div>
         </div>
       </section>
 
-      <!-- Reminders Tab -->
-      <section id="reminders_tab" class="tab" style="padding:16px;">
+      <section id="reminders_tab" class="tab reminders-tab">
         <h2>Reminders</h2>
-        <p style="color:var(--muted);margin:0 0 12px;font-size:0.95rem;">Track bills and payments.</p>
-
-        <div style="background:var(--panel);padding:18px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,0.04);margin-bottom:18px;">
-          <form id="reminderForm" style="display:flex;flex-direction:column;gap:12px;">
-            <label style="font-weight:600;color:var(--text);display:flex;flex-direction:column;gap:6px;">
+        <p class="reminder-subtitle">Track bills and payments.</p>
+        <div class="reminder-card">
+          <div class="reminder-form">
+            <label>
               Reminder Name
-              <input id="reminderName" type="text" placeholder="e.g., Rent" required style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <input id="reminderName" type="text" placeholder="e.g., Rent" required>
             </label>
-            <label style="font-weight:600;color:var(--text);display:flex;flex-direction:column;gap:6px;">
+            <label>
               Amount ($)
-              <input id="reminderAmount" type="number" min="0" step="0.01" placeholder="0.00" required style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <input id="reminderAmount" type="number" min="0" step="0.01" placeholder="0.00" required>
             </label>
-            <label style="font-weight:600;color:var(--text);display:flex;flex-direction:column;gap:6px;">
+            <label>
               Due Date
-              <input type="date" id="reminderDueDate" required style="padding:10px;border:1px solid var(--border);border-radius:8px;">
+              <input type="date" id="reminderDueDate" required>
             </label>
-            <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--text);">
-              <input type="checkbox" id="reminderRecurring"> Recurring
+            <label class="reminder-recurring-row">
+              <input type="checkbox" id="reminderRecurring">
+              Recurring
             </label>
-            <button type="submit" class="btn btn-primary" style="width:100%;">Add Reminder</button>
-          </form>
+            <button type="button" class="btn btn-primary" onclick="addReminder()">Add Reminder</button>
+          </div>
         </div>
-
-        <div id="reminderList" aria-live="polite" style="display:flex;flex-direction:column;gap:12px;"></div>
+        <div id="reminderList" aria-live="polite" class="reminder-list"></div>
       </section>
+    </div>
 
-
-    <!-- navigation  bar -->
     <nav id="navigationBar">
-      <button id="tab-text" class="active" data-target="#text_tab">
+      <button id="tab-text" class="active" data-target="#text_tab" type="button">
         <i class="fi fi-rr-dashboard"></i>
         <span>Dashboard</span>
       </button>
-      <button id="tab-lr" data-target="#lr_tab" data-label="transactions">
+      <button id="tab-lr" data-target="#lr_tab" data-label="transactions" type="button">
         <i class="fi fi-rr-money"></i>
         <span>Transactions</span>
       </button>
-      <button id="tab-profile" data-target="#profile_tab">
+      <button id="tab-personalize" data-target="#personalize_tab" type="button">
+        <i class="fi fi-rr-edit"></i>
+        <span>Personalize</span>
+      </button>
+      <button id="tab-profile" data-target="#profile_tab" type="button">
         <i class="fi fi-rr-user"></i>
-        <span>Profile</span>
+        <span>Profile Trends</span>
       </button>
-      <button id="tab-choices" data-target="#choices_tab">
-       <i class="fi fi-rr-display-chart-up"></i>
-        <span>Trends</span>
-      </button>
-      <button id="tab-todo" data-target="#reminders_tab">
+      <button id="tab-todo" data-target="#reminders_tab" type="button">
         <i class="fi fi-rr-task-checklist"></i>
         <span>Reminders</span>
       </button>
